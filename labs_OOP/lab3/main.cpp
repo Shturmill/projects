@@ -27,14 +27,13 @@ public:
     std::atomic<bool> stop_flag;           // Флаг для остановки вычислений
 
 signals:
-    void resultReady(const QString &result); // Сигнал для передачи результата
+    void resultReady(const QString &result); 
 
 protected:
     void run() override {
         double sum = 0.0;
         int total_iterations = iterations;
 
-        // Параллельное вычисление π с использованием OpenMP
         #pragma omp parallel for reduction(+:sum)
         for (int k = 0; k < total_iterations; ++k) {
             // Если флаг остановки установлен, пропускаем вычисления
@@ -44,10 +43,9 @@ protected:
                                1.0 / (8 * k + 5) - 1.0 / (8 * k + 6));
                 sum += term;
             }
-            completed_iterations.fetch_add(1, std::memory_order_relaxed); // Обновляем прогресс
+            completed_iterations.fetch_add(1, std::memory_order_relaxed);
         }
 
-        // Формируем результат в зависимости от остановки
         std::ostringstream oss;
         if (!stop_flag.load()) {
             oss << std::fixed << std::setprecision(100) << "Значение π: " << sum;
@@ -58,7 +56,7 @@ protected:
     }
 
 private:
-    int iterations; // Количество итераций
+    int iterations;
 };
 
 // Класс основного окна приложения
@@ -104,22 +102,17 @@ public:
         input->setMaximumWidth(150); 
         inputLayout->addWidget(input);
         
-        // Добавляем горизонтальный layout в основной вертикальный
         layout->addLayout(inputLayout);
 
-        // Горизонтальный layout для кнопок "Старт" и "Стоп"
         QHBoxLayout *buttonLayout = new QHBoxLayout();
 
-        // Кнопка "Старт"
         startButton = new QPushButton("Старт", this);
         buttonLayout->addWidget(startButton);
 
-        // Кнопка "Стоп"
         stopButton = new QPushButton("Стоп", this);
         stopButton->setEnabled(false);
         buttonLayout->addWidget(stopButton);
 
-        // Добавляем горизонтальный layout кнопок в основной вертикальный
         layout->addLayout(buttonLayout);
 
         progressBar = new QProgressBar(this);
