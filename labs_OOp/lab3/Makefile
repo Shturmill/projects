@@ -52,10 +52,8 @@ OBJECTS_DIR   = ./
 
 ####### Files
 
-SOURCES       = main.cpp \
-		lab2.cpp 
-OBJECTS       = main.o \
-		lab2.o
+SOURCES       = main.cpp 
+OBJECTS       = main.o
 DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/common/unix.conf \
 		/usr/lib/qt6/mkspecs/common/linux.conf \
@@ -241,8 +239,7 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/features/exceptions.prf \
 		/usr/lib/qt6/mkspecs/features/yacc.prf \
 		/usr/lib/qt6/mkspecs/features/lex.prf \
-		myproject.pro lab2.h main.cpp \
-		lab2.cpp
+		myproject.pro  main.cpp
 QMAKE_TARGET  = myproject
 DESTDIR       = 
 TARGET        = myproject
@@ -648,8 +645,7 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/qt6/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents lab2.h $(DISTDIR)/
-	$(COPY_FILE) --parents main.cpp lab2.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents main.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -707,9 +703,6 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_source_clean
 
 main.o: main.cpp main.moc
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
-
-lab2.o: lab2.cpp lab2.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o lab2.o lab2.cpp
 
 ####### Install
 

@@ -1,0 +1,6 @@
+FROM ubuntu:latest
+RUN apt-get -y update && apt-get install -y
+RUN apt-get -y install clang
+copy . usr/Documents/projects/labs_OOp/lab4
+WORKDIR . usr/Documents/projects/labs_OOp/lab4
+RUN clang++ -o TEST main.cpp

@@ -68,7 +68,6 @@ public:
     MainWindow(QWidget *parent = nullptr) : QMainWindow(parent) {
         setWindowTitle("Вычисление числа π");
 
-        // Создание меню на русском языке
         QMenu *fileMenu = menuBar()->addMenu("Файл");
         QMenu *editMenu = menuBar()->addMenu("Правка");
         QMenu *helpMenu = menuBar()->addMenu("Справка");
@@ -89,27 +88,45 @@ public:
         connect(saveAction, &QAction::triggered, this, &MainWindow::onSave);
         connect(exitAction, &QAction::triggered, this, &MainWindow::onExit);
 
-        // Настройка интерфейса
         QWidget *centralWidget = new QWidget(this);
         setCentralWidget(centralWidget);
         QVBoxLayout *layout = new QVBoxLayout(centralWidget);
-
+        
+        QHBoxLayout *inputLayout = new QHBoxLayout();
+        
+        button = new QPushButton("Нажми меня", this);
+        button->setMaximumWidth(150); 
+        inputLayout->addWidget(button);
+        
         input = new QLineEdit(this);
-        input->setPlaceholderText("Введите количество итераций");
-        layout->addWidget(input, 0, Qt::AlignCenter);
+        input->setPlaceholderText("Введите количество итераций или текст");
+        input->setMaxLength(12); 
+        input->setMaximumWidth(150); 
+        inputLayout->addWidget(input);
+        
+        // Добавляем горизонтальный layout в основной вертикальный
+        layout->addLayout(inputLayout);
 
+        // Горизонтальный layout для кнопок "Старт" и "Стоп"
+        QHBoxLayout *buttonLayout = new QHBoxLayout();
+
+        // Кнопка "Старт"
         startButton = new QPushButton("Старт", this);
-        layout->addWidget(startButton, 0, Qt::AlignCenter);
+        buttonLayout->addWidget(startButton);
 
+        // Кнопка "Стоп"
         stopButton = new QPushButton("Стоп", this);
         stopButton->setEnabled(false);
-        layout->addWidget(stopButton, 0, Qt::AlignCenter);
+        buttonLayout->addWidget(stopButton);
+
+        // Добавляем горизонтальный layout кнопок в основной вертикальный
+        layout->addLayout(buttonLayout);
 
         progressBar = new QProgressBar(this);
         progressBar->setRange(0, 100);
         progressBar->setValue(0);
         progressBar->setAlignment(Qt::AlignCenter);
-        layout->addWidget(progressBar, 0, Qt::AlignCenter);
+        layout->addWidget(progressBar);
 
         layout->addStretch();
 
@@ -117,6 +134,7 @@ public:
         setStatusBar(statusBar);
         statusBar->showMessage("Готово");
 
+        connect(button, &QPushButton::clicked, this, &MainWindow::updateWindowTitle);
         connect(startButton, &QPushButton::clicked, this, &MainWindow::startPiCalculation);
         connect(stopButton, &QPushButton::clicked, this, &MainWindow::stopPiCalculation);
     }
@@ -133,6 +151,13 @@ private slots:
     void onExit() {
         QMessageBox::information(this, "Выход", "Вы выбрали пункт 'Выход'.");
         close();
+    }
+
+    void updateWindowTitle() {
+        QString text = input->text();
+        if (!text.isEmpty()) {
+            setWindowTitle(text);
+        }
     }
 
     void startPiCalculation() {
@@ -199,6 +224,7 @@ private slots:
     }
 
 private:
+    QPushButton *button;
     QLineEdit *input;
     QPushButton *startButton;
     QPushButton *stopButton;
