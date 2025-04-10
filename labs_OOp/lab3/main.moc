@@ -130,8 +130,8 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         "",
         "onSave",
         "onExit",
-        "updateWindowTitle",
         "startPiCalculation",
+        "stopPiCalculation",
         "handlePiResult",
         "result"
     };
@@ -143,9 +143,9 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         QtMocHelpers::SlotData<void()>(3, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'onExit'
         QtMocHelpers::SlotData<void()>(4, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'updateWindowTitle'
-        QtMocHelpers::SlotData<void()>(5, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'startPiCalculation'
+        QtMocHelpers::SlotData<void()>(5, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'stopPiCalculation'
         QtMocHelpers::SlotData<void()>(6, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'handlePiResult'
         QtMocHelpers::SlotData<void(const QString &)>(7, 2, QMC::AccessPrivate, QMetaType::Void, {{
@@ -177,8 +177,8 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 0: _t->onOpen(); break;
         case 1: _t->onSave(); break;
         case 2: _t->onExit(); break;
-        case 3: _t->updateWindowTitle(); break;
-        case 4: _t->startPiCalculation(); break;
+        case 3: _t->startPiCalculation(); break;
+        case 4: _t->stopPiCalculation(); break;
         case 5: _t->handlePiResult((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         default: ;
         }
