@@ -16,7 +16,7 @@ CC            = gcc
 CXX           = g++
 DEFINES       = -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -O2 -Wall -Wextra -mno-direct-extern-access -D_REENTRANT $(DEFINES)
-CXXFLAGS      = -pipe -O2 -Wall -Wextra -mno-direct-extern-access -D_REENTRANT $(DEFINES)
+CXXFLAGS      = -pipe -fopenmp -O2 -Wall -Wextra -mno-direct-extern-access -D_REENTRANT $(DEFINES)
 INCPATH       = -I. -I/usr/include/qt6 -I/usr/include/qt6/QtWidgets -I/usr/include/qt6/QtGui -I/usr/include/qt6/QtCore -I. -I/usr/lib/qt6/mkspecs/linux-g++
 QMAKE         = /usr/bin/qmake6
 DEL_FILE      = rm -f
@@ -37,10 +37,10 @@ MOVE          = mv -f
 TAR           = tar -cf
 COMPRESS      = gzip -9f
 DISTNAME      = myproject1.0.0
-DISTDIR = /home/shtorka/vscodeC/labs_OOp/lab3/.tmp/myproject1.0.0
+DISTDIR = /home/shtorka/Documents/projects/labs_OOp/lab3/.tmp/myproject1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-O1 -Wl,-rpath,/usr/lib -Wl,-rpath-link,/usr/lib
-LIBS          = $(SUBLIBS) /usr/lib/libQt6Widgets.so /usr/lib/libQt6Gui.so /usr/lib/libGLX.so /usr/lib/libOpenGL.so /usr/lib/libQt6Core.so -lpthread -lGLX -lOpenGL   
+LIBS          = $(SUBLIBS) -fopenmp /usr/lib/libQt6Widgets.so /usr/lib/libQt6Gui.so /usr/lib/libGLX.so /usr/lib/libOpenGL.so /usr/lib/libQt6Core.so -lpthread -lGLX -lOpenGL   
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -52,8 +52,10 @@ OBJECTS_DIR   = ./
 
 ####### Files
 
-SOURCES       = main.cpp 
-OBJECTS       = main.o
+SOURCES       = main.cpp \
+		lab2.cpp 
+OBJECTS       = main.o \
+		lab2.o
 DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/common/unix.conf \
 		/usr/lib/qt6/mkspecs/common/linux.conf \
@@ -63,25 +65,12 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/common/g++-base.conf \
 		/usr/lib/qt6/mkspecs/common/g++-unix.conf \
 		/usr/lib/qt6/mkspecs/qconfig.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_KDSoapClient.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_KDSoapServer.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_KF6UserFeedbackCore.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_KF6UserFeedbackWidgets.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_charts.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_charts_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_chartsqml.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_chartsqml_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_concurrent.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_concurrent_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_core.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_core5compat.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_core5compat_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_core_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_dbus.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_dbus_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_designer.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_designer_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_designercomponents_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_devicediscovery_support_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_eglfs_kms_gbm_support_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_eglfs_kms_support_private.pri \
@@ -91,8 +80,6 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_fb_support_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_gui.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_gui_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_help.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_help_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_input_support_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_kms_support_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_labsanimation.pri \
@@ -109,13 +96,6 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_labssharedimage_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_labswavefrontmesh.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_labswavefrontmesh_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_linguist.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimedia.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimedia_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimediaquick_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimediatestlibprivate_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimediawidgets.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimediawidgets_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_network.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_network_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_opengl.pri \
@@ -123,21 +103,8 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_openglwidgets.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_openglwidgets_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_packetprotocol_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdf.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdf_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdfquick.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdfquick_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdfwidgets.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdfwidgets_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_positioning.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_positioning_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_positioningquick.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_positioningquick_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_printsupport.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_printsupport_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_qdoccatch_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_qdoccatchconversions_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_qdoccatchgenerators_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qml.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qml_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlassetdownloader.pri \
@@ -148,6 +115,7 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlcore_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmldebug_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmldom_private.pri \
+		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlformat_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlintegration.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlintegration_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmllocalstorage.pri \
@@ -168,32 +136,6 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlxmllistmodel.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlxmllistmodel_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quick.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3d.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3d_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetimport.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetimport_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetutils.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetutils_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3deffects.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3deffects_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dglslparser_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpers.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpers_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpersimpl.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpersimpl_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3diblbaker.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3diblbaker_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticleeffects.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticleeffects_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticles.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticles_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3druntimerender.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3druntimerender_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dspatialaudio_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dutils.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dutils_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dxr.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dxr_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quick_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickcontrols2.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickcontrols2_private.pri \
@@ -228,6 +170,7 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickdialogs2quickimpl_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickdialogs2utils.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickdialogs2utils_private.pri \
+		/usr/lib/qt6/mkspecs/modules/qt_lib_quickeffects.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickeffects_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quicklayouts.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quicklayouts_private.pri \
@@ -236,21 +179,11 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktemplates2.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktemplates2_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktestutilsprivate_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimeline.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimeline_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimelineblendtrees.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimelineblendtrees_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickvectorimage.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickvectorimage_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickvectorimagegenerator_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickwidgets.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickwidgets_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_serialport.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_serialport_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_shadertools.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_shadertools_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_spatialaudio.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_spatialaudio_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_sql.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_sql_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_svg.pri \
@@ -260,12 +193,6 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_testinternals_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_testlib.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_testlib_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_texttospeech.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_texttospeech_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_tools_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_uiplugin.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_uitools.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_uitools_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_wayland_egl_client_hw_integration_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_wayland_egl_compositor_hw_integration_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_waylandclient.pri \
@@ -281,18 +208,6 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_waylandcompositorxdgshell.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_waylandcompositorxdgshell_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_waylandglobal_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webchannel.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webchannel_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webchannelquick.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webchannelquick_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginecore.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginecore_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequick.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequick_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequickdelegatesqml.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequickdelegatesqml_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginewidgets.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginewidgets_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_widgets.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_widgets_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_wl_shell_integration_private.pri \
@@ -326,7 +241,8 @@ DIST          = /usr/lib/qt6/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt6/mkspecs/features/exceptions.prf \
 		/usr/lib/qt6/mkspecs/features/yacc.prf \
 		/usr/lib/qt6/mkspecs/features/lex.prf \
-		myproject.pro  main.cpp
+		myproject.pro lab2.h main.cpp \
+		lab2.cpp
 QMAKE_TARGET  = myproject
 DESTDIR       = 
 TARGET        = myproject
@@ -347,25 +263,12 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 		/usr/lib/qt6/mkspecs/common/g++-base.conf \
 		/usr/lib/qt6/mkspecs/common/g++-unix.conf \
 		/usr/lib/qt6/mkspecs/qconfig.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_KDSoapClient.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_KDSoapServer.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_KF6UserFeedbackCore.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_KF6UserFeedbackWidgets.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_charts.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_charts_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_chartsqml.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_chartsqml_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_concurrent.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_concurrent_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_core.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_core5compat.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_core5compat_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_core_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_dbus.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_dbus_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_designer.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_designer_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_designercomponents_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_devicediscovery_support_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_eglfs_kms_gbm_support_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_eglfs_kms_support_private.pri \
@@ -375,8 +278,6 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 		/usr/lib/qt6/mkspecs/modules/qt_lib_fb_support_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_gui.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_gui_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_help.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_help_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_input_support_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_kms_support_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_labsanimation.pri \
@@ -393,13 +294,6 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 		/usr/lib/qt6/mkspecs/modules/qt_lib_labssharedimage_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_labswavefrontmesh.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_labswavefrontmesh_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_linguist.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimedia.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimedia_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimediaquick_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimediatestlibprivate_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimediawidgets.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_multimediawidgets_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_network.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_network_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_opengl.pri \
@@ -407,21 +301,8 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 		/usr/lib/qt6/mkspecs/modules/qt_lib_openglwidgets.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_openglwidgets_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_packetprotocol_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdf.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdf_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdfquick.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdfquick_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdfwidgets.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_pdfwidgets_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_positioning.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_positioning_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_positioningquick.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_positioningquick_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_printsupport.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_printsupport_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_qdoccatch_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_qdoccatchconversions_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_qdoccatchgenerators_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qml.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qml_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlassetdownloader.pri \
@@ -432,6 +313,7 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlcore_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmldebug_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmldom_private.pri \
+		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlformat_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlintegration.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlintegration_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmllocalstorage.pri \
@@ -452,32 +334,6 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlxmllistmodel.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_qmlxmllistmodel_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quick.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3d.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3d_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetimport.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetimport_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetutils.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetutils_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3deffects.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3deffects_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dglslparser_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpers.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpers_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpersimpl.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpersimpl_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3diblbaker.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3diblbaker_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticleeffects.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticleeffects_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticles.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticles_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3druntimerender.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3druntimerender_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dspatialaudio_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dutils.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dutils_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dxr.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dxr_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quick_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickcontrols2.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickcontrols2_private.pri \
@@ -512,6 +368,7 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickdialogs2quickimpl_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickdialogs2utils.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickdialogs2utils_private.pri \
+		/usr/lib/qt6/mkspecs/modules/qt_lib_quickeffects.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickeffects_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quicklayouts.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quicklayouts_private.pri \
@@ -520,21 +377,11 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktemplates2.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktemplates2_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktestutilsprivate_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimeline.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimeline_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimelineblendtrees.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimelineblendtrees_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickvectorimage.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickvectorimage_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickvectorimagegenerator_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickwidgets.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_quickwidgets_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_serialport.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_serialport_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_shadertools.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_shadertools_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_spatialaudio.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_spatialaudio_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_sql.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_sql_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_svg.pri \
@@ -544,12 +391,6 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 		/usr/lib/qt6/mkspecs/modules/qt_lib_testinternals_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_testlib.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_testlib_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_texttospeech.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_texttospeech_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_tools_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_uiplugin.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_uitools.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_uitools_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_wayland_egl_client_hw_integration_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_wayland_egl_compositor_hw_integration_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_waylandclient.pri \
@@ -565,18 +406,6 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 		/usr/lib/qt6/mkspecs/modules/qt_lib_waylandcompositorxdgshell.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_waylandcompositorxdgshell_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_waylandglobal_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webchannel.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webchannel_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webchannelquick.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webchannelquick_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginecore.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginecore_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequick.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequick_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequickdelegatesqml.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequickdelegatesqml_private.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginewidgets.pri \
-		/usr/lib/qt6/mkspecs/modules/qt_lib_webenginewidgets_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_widgets.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_widgets_private.pri \
 		/usr/lib/qt6/mkspecs/modules/qt_lib_wl_shell_integration_private.pri \
@@ -624,25 +453,12 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 /usr/lib/qt6/mkspecs/common/g++-base.conf:
 /usr/lib/qt6/mkspecs/common/g++-unix.conf:
 /usr/lib/qt6/mkspecs/qconfig.pri:
-/usr/lib/qt6/mkspecs/modules/qt_KDSoapClient.pri:
-/usr/lib/qt6/mkspecs/modules/qt_KDSoapServer.pri:
-/usr/lib/qt6/mkspecs/modules/qt_KF6UserFeedbackCore.pri:
-/usr/lib/qt6/mkspecs/modules/qt_KF6UserFeedbackWidgets.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_charts.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_charts_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_chartsqml.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_chartsqml_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_concurrent.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_concurrent_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_core.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_core5compat.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_core5compat_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_core_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_dbus.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_dbus_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_designer.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_designer_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_designercomponents_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_devicediscovery_support_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_eglfs_kms_gbm_support_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_eglfs_kms_support_private.pri:
@@ -652,8 +468,6 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 /usr/lib/qt6/mkspecs/modules/qt_lib_fb_support_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_gui.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_gui_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_help.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_help_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_input_support_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_kms_support_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_labsanimation.pri:
@@ -670,13 +484,6 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 /usr/lib/qt6/mkspecs/modules/qt_lib_labssharedimage_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_labswavefrontmesh.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_labswavefrontmesh_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_linguist.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_multimedia.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_multimedia_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_multimediaquick_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_multimediatestlibprivate_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_multimediawidgets.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_multimediawidgets_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_network.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_network_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_opengl.pri:
@@ -684,21 +491,8 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 /usr/lib/qt6/mkspecs/modules/qt_lib_openglwidgets.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_openglwidgets_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_packetprotocol_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_pdf.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_pdf_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_pdfquick.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_pdfquick_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_pdfwidgets.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_pdfwidgets_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_positioning.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_positioning_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_positioningquick.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_positioningquick_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_printsupport.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_printsupport_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_qdoccatch_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_qdoccatchconversions_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_qdoccatchgenerators_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_qml.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_qml_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_qmlassetdownloader.pri:
@@ -709,6 +503,7 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 /usr/lib/qt6/mkspecs/modules/qt_lib_qmlcore_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_qmldebug_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_qmldom_private.pri:
+/usr/lib/qt6/mkspecs/modules/qt_lib_qmlformat_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_qmlintegration.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_qmlintegration_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_qmllocalstorage.pri:
@@ -729,32 +524,6 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 /usr/lib/qt6/mkspecs/modules/qt_lib_qmlxmllistmodel.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_qmlxmllistmodel_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quick.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3d.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3d_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetimport.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetimport_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetutils.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dassetutils_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3deffects.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3deffects_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dglslparser_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpers.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpers_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpersimpl.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dhelpersimpl_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3diblbaker.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3diblbaker_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticleeffects.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticleeffects_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticles.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dparticles_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3druntimerender.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3druntimerender_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dspatialaudio_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dutils.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dutils_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dxr.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quick3dxr_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quick_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickcontrols2.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickcontrols2_private.pri:
@@ -789,6 +558,7 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickdialogs2quickimpl_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickdialogs2utils.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickdialogs2utils_private.pri:
+/usr/lib/qt6/mkspecs/modules/qt_lib_quickeffects.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickeffects_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quicklayouts.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quicklayouts_private.pri:
@@ -797,21 +567,11 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 /usr/lib/qt6/mkspecs/modules/qt_lib_quicktemplates2.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quicktemplates2_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quicktestutilsprivate_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimeline.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimeline_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimelineblendtrees.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_quicktimelineblendtrees_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickvectorimage.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickvectorimage_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickvectorimagegenerator_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickwidgets.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_quickwidgets_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_serialport.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_serialport_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_shadertools.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_shadertools_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_spatialaudio.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_spatialaudio_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_sql.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_sql_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_svg.pri:
@@ -821,12 +581,6 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 /usr/lib/qt6/mkspecs/modules/qt_lib_testinternals_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_testlib.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_testlib_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_texttospeech.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_texttospeech_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_tools_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_uiplugin.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_uitools.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_uitools_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_wayland_egl_client_hw_integration_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_wayland_egl_compositor_hw_integration_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_waylandclient.pri:
@@ -842,18 +596,6 @@ Makefile: myproject.pro /usr/lib/qt6/mkspecs/linux-g++/qmake.conf /usr/lib/qt6/m
 /usr/lib/qt6/mkspecs/modules/qt_lib_waylandcompositorxdgshell.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_waylandcompositorxdgshell_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_waylandglobal_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webchannel.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webchannel_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webchannelquick.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webchannelquick_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webenginecore.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webenginecore_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequick.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequick_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequickdelegatesqml.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webenginequickdelegatesqml_private.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webenginewidgets.pri:
-/usr/lib/qt6/mkspecs/modules/qt_lib_webenginewidgets_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_widgets.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_widgets_private.pri:
 /usr/lib/qt6/mkspecs/modules/qt_lib_wl_shell_integration_private.pri:
@@ -906,7 +648,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/qt6/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents main.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents lab2.h $(DISTDIR)/
+	$(COPY_FILE) --parents main.cpp lab2.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -936,7 +679,7 @@ compiler_moc_predefs_make_all: moc_predefs.h
 compiler_moc_predefs_clean:
 	-$(DEL_FILE) moc_predefs.h
 moc_predefs.h: /usr/lib/qt6/mkspecs/features/data/dummy.cpp
-	g++ -pipe -O2 -Wall -Wextra -dM -E -o moc_predefs.h /usr/lib/qt6/mkspecs/features/data/dummy.cpp
+	g++ -pipe -fopenmp -O2 -Wall -Wextra -dM -E -o moc_predefs.h /usr/lib/qt6/mkspecs/features/data/dummy.cpp
 
 compiler_moc_header_make_all:
 compiler_moc_header_clean:
@@ -948,7 +691,7 @@ compiler_moc_source_clean:
 main.moc: main.cpp \
 		moc_predefs.h \
 		/usr/lib/qt6/moc
-	/usr/lib/qt6/moc $(DEFINES) --include /home/shtorka/vscodeC/labs_OOp/lab3/moc_predefs.h -I/usr/lib/qt6/mkspecs/linux-g++ -I/home/shtorka/vscodeC/labs_OOp/lab3 -I/usr/include/qt6 -I/usr/include/qt6/QtWidgets -I/usr/include/qt6/QtGui -I/usr/include/qt6/QtCore -I/usr/include/c++/14.2.1 -I/usr/include/c++/14.2.1/x86_64-pc-linux-gnu -I/usr/include/c++/14.2.1/backward -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include -I/usr/local/include -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include-fixed -I/usr/include main.cpp -o main.moc
+	/usr/lib/qt6/moc $(DEFINES) --include /home/shtorka/Documents/projects/labs_OOp/lab3/moc_predefs.h -I/usr/lib/qt6/mkspecs/linux-g++ -I/home/shtorka/Documents/projects/labs_OOp/lab3 -I/usr/include/qt6 -I/usr/include/qt6/QtWidgets -I/usr/include/qt6/QtGui -I/usr/include/qt6/QtCore -I/usr/include/c++/14.2.1 -I/usr/include/c++/14.2.1/x86_64-pc-linux-gnu -I/usr/include/c++/14.2.1/backward -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include -I/usr/local/include -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include-fixed -I/usr/include main.cpp -o main.moc
 
 compiler_uic_make_all:
 compiler_uic_clean:
@@ -964,6 +707,9 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_source_clean
 
 main.o: main.cpp main.moc
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
+
+lab2.o: lab2.cpp lab2.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o lab2.o lab2.cpp
 
 ####### Install
 
