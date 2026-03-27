@@ -111,14 +111,13 @@ class GraphApp:
     def __init__(self, root):
         self.root = root
         self.root.title('Графы: Python GUI + C search')
-        self.root.geometry('1200x760')
-        self.root.minsize(1000, 650)
+        self.root.geometry('1450x820')
+        self.root.minsize(1200, 700)
 
         self.program_var = tk.StringVar(value='./build/graph_search')
-        self.file_var = tk.StringVar(value = './data/graph.txt')
-        self.start_var = tk.StringVar(value = '1')
-        self.goal_var = tk.StringVar()
-        self.algorithm_var = tk.StringVar(value='bfs')
+        self.file_var = tk.StringVar(value='./data/graph.txt')
+        self.start_var = tk.StringVar(value='1')
+        self.goal_var = tk.StringVar(value='1')
 
         self.n = 0
         self.adj = None
@@ -141,23 +140,14 @@ class GraphApp:
         ttk.Button(top, text='Обзор...', command=self.choose_file).grid(row=1, column=2, padx=5)
         ttk.Button(top, text='Загрузить граф', command=self.load_graph).grid(row=1, column=3, padx=5)
 
-        ttk.Label(top, text='Старт:').grid(row=2, column=0, sticky='w')
+        ttk.Label(top, text='Начальная вершина:').grid(row=2, column=0, sticky='w')
         ttk.Entry(top, textvariable=self.start_var, width=10).grid(row=2, column=1, sticky='w', padx=5)
 
-        ttk.Label(top, text='Цель:').grid(row=2, column=2, sticky='w')
+        ttk.Label(top, text='Целевая вершина:').grid(row=2, column=2, sticky='w')
         ttk.Entry(top, textvariable=self.goal_var, width=10).grid(row=2, column=3, sticky='w', padx=5)
 
-        ttk.Label(top, text='Алгоритм:').grid(row=2, column=4, sticky='w')
-        ttk.Combobox(
-            top,
-            textvariable=self.algorithm_var,
-            values=['bfs', 'dfs_iter', 'dfs_rec', 'dfs_rec_path'],
-            state='readonly',
-            width=18,
-        ).grid(row=2, column=5, sticky='w', padx=5)
-
-        ttk.Button(top, text='Запустить поиск', command=self.run_search).grid(row=2, column=6, padx=10)
-        ttk.Button(top, text='Очистить результат', command=self.clear_result).grid(row=2, column=7, padx=5)
+        ttk.Button(top, text='Запустить BFS и DFS', command=self.run_searches).grid(row=2, column=4, padx=10)
+        ttk.Button(top, text='Очистить результат', command=self.clear_result).grid(row=2, column=5, padx=5)
 
         top.columnconfigure(1, weight=1)
 
@@ -180,23 +170,35 @@ class GraphApp:
         matrix_scroll_y.pack(side='right', fill='y')
         self.matrix_text.configure(yscrollcommand=matrix_scroll_y.set)
 
-        result_frame = ttk.LabelFrame(left, text='Результат поиска', padding=10)
+        result_frame = ttk.LabelFrame(left, text='Результаты поиска', padding=10)
         result_frame.pack(fill='both', expand=True, pady=(10, 0))
 
-        self.result_text = tk.Text(result_frame, width=45, height=12, wrap='word')
+        self.result_text = tk.Text(result_frame, width=45, height=16, wrap='word')
         self.result_text.pack(fill='both', expand=True)
 
-        canvas_frame = ttk.LabelFrame(right, text='Визуализация графа', padding=10)
-        canvas_frame.pack(fill='both', expand=True)
+        bfs_frame = ttk.LabelFrame(right, text='Визуализация BFS', padding=10)
+        bfs_frame.pack(fill='both', expand=True)
 
-        self.canvas = tk.Canvas(
-            canvas_frame,
+        self.bfs_canvas = tk.Canvas(
+            bfs_frame,
             bg='white',
             highlightthickness=1,
             highlightbackground='#bbbbbb'
         )
-        self.canvas.pack(fill='both', expand=True)
-        self.canvas.bind('<Configure>', self.on_canvas_resize)
+        self.bfs_canvas.pack(fill='both', expand=True)
+        self.bfs_canvas.bind('<Configure>', self.on_canvas_resize)
+
+        dfs_frame = ttk.LabelFrame(right, text='Визуализация DFS', padding=10)
+        dfs_frame.pack(fill='both', expand=True, pady=(10, 0))
+
+        self.dfs_canvas = tk.Canvas(
+            dfs_frame,
+            bg='white',
+            highlightthickness=1,
+            highlightbackground='#bbbbbb'
+        )
+        self.dfs_canvas.pack(fill='both', expand=True)
+        self.dfs_canvas.bind('<Configure>', self.on_canvas_resize)
 
         legend = ttk.Label(
             right,
@@ -231,18 +233,21 @@ class GraphApp:
         self.result_text.delete('1.0', tk.END)
         self.result_text.insert(tk.END, f'Граф загружен: {os.path.basename(filename)}\n')
         self.result_text.insert(tk.END, f'Число вершин: {self.n}\n')
-        self.result_text.insert(tk.END, 'Теперь можно запускать поиск.\n')
+        self.result_text.insert(tk.END, 'Теперь можно запускать BFS и DFS.\n')
 
-        self.draw_graph()
+        self.draw_graph(self.bfs_canvas, path=None)
+        self.draw_graph(self.dfs_canvas, path=None)
 
     def clear_result(self):
         self.result_text.delete('1.0', tk.END)
         if self.adj is not None:
-            self.draw_graph()
+            self.draw_graph(self.bfs_canvas, path=None)
+            self.draw_graph(self.dfs_canvas, path=None)
 
     def on_canvas_resize(self, event):
         if self.adj is not None:
-            self.draw_graph()
+            self.draw_graph(self.bfs_canvas, path=None)
+            self.draw_graph(self.dfs_canvas, path=None)
 
     def choose_root(self):
         try:
@@ -264,14 +269,14 @@ class GraphApp:
 
         return 1
 
-    def compute_tree_positions(self):
+    def compute_tree_positions(self, canvas):
         self.node_positions = {}
         if not self.n:
             return {}, set()
 
-        self.canvas.update_idletasks()
-        width = max(self.canvas.winfo_width(), 500)
-        height = max(self.canvas.winfo_height(), 400)
+        canvas.update_idletasks()
+        width = max(canvas.winfo_width(), 500)
+        height = max(canvas.winfo_height(), 300)
 
         root = self.choose_root()
 
@@ -325,8 +330,8 @@ class GraphApp:
         if total_levels == 0:
             return parent, tree_edges
 
-        top_margin = 60
-        bottom_margin = 60
+        top_margin = 45
+        bottom_margin = 45
         left_margin = 60
         right_margin = 60
 
@@ -354,7 +359,7 @@ class GraphApp:
 
         return parent, tree_edges
 
-    def draw_arrow_line(self, x1, y1, x2, y2, color='black', width=2, dash=None):
+    def draw_arrow_line(self, canvas, x1, y1, x2, y2, color='black', width=2, dash=None):
         dx = x2 - x1
         dy = y2 - y1
         dist = math.hypot(dx, dy)
@@ -367,7 +372,7 @@ class GraphApp:
         end_x = x2 - dx / dist * node_r
         end_y = y2 - dy / dist * node_r
 
-        self.canvas.create_line(
+        canvas.create_line(
             start_x, start_y, end_x, end_y,
             arrow=tk.LAST,
             width=width,
@@ -375,9 +380,9 @@ class GraphApp:
             dash=dash,
         )
 
-    def draw_loop(self, x, y, color='black', width=2):
+    def draw_loop(self, canvas, x, y, color='black', width=2):
         r = 24
-        self.canvas.create_arc(
+        canvas.create_arc(
             x - r, y - 2 * r,
             x + r, y,
             start=30,
@@ -386,7 +391,7 @@ class GraphApp:
             outline=color,
             width=width,
         )
-        self.canvas.create_line(
+        canvas.create_line(
             x + r * 0.75, y - r * 0.9,
             x + r * 0.55, y - r * 0.55,
             arrow=tk.LAST,
@@ -394,18 +399,18 @@ class GraphApp:
             width=width
         )
 
-    def draw_graph(self, path=None):
-        self.canvas.delete('all')
+    def draw_graph(self, canvas, path=None):
+        canvas.delete('all')
 
         if self.adj is None:
-            self.canvas.create_text(
+            canvas.create_text(
                 250, 100,
                 text='Сначала загрузи граф из файла',
                 font=('Arial', 14),
             )
             return
 
-        _, tree_edges = self.compute_tree_positions()
+        _, tree_edges = self.compute_tree_positions(canvas)
 
         path_edges = set()
         path_nodes = set(path or [])
@@ -438,9 +443,9 @@ class GraphApp:
                     dash = (4, 2)
 
                 if i == j:
-                    self.draw_loop(x1, y1, color=color, width=width)
+                    self.draw_loop(canvas, x1, y1, color=color, width=width)
                 else:
-                    self.draw_arrow_line(x1, y1, x2, y2, color=color, width=width, dash=dash)
+                    self.draw_arrow_line(canvas, x1, y1, x2, y2, color=color, width=width, dash=dash)
 
         for v in range(1, self.n + 1):
             if v not in self.node_positions:
@@ -453,15 +458,15 @@ class GraphApp:
             outline = '#cc0000' if v in path_nodes else '#336699'
             line_w = 3 if v in path_nodes else 2
 
-            self.canvas.create_oval(
+            canvas.create_oval(
                 x - r, y - r, x + r, y + r,
                 fill=fill,
                 outline=outline,
                 width=line_w
             )
-            self.canvas.create_text(x, y, text=str(v), font=('Arial', 12, 'bold'))
+            canvas.create_text(x, y, text=str(v), font=('Arial', 12, 'bold'))
 
-    def run_search(self):
+    def run_searches(self):
         if self.adj is None:
             messagebox.showwarning('Граф не загружен', 'Сначала загрузи граф из файла.')
             return
@@ -481,36 +486,49 @@ class GraphApp:
             start = int(self.start_var.get())
             goal = int(self.goal_var.get())
         except ValueError:
-            messagebox.showerror('Ошибка', 'Старт и цель должны быть целыми числами.')
+            messagebox.showerror('Ошибка', 'Начальная и целевая вершины должны быть целыми числами.')
             return
 
         if not (1 <= start <= self.n) or not (1 <= goal <= self.n):
             messagebox.showerror('Ошибка', f'Вершины должны быть в диапазоне от 1 до {self.n}.')
             return
 
-        algorithm = self.algorithm_var.get()
-
         try:
-            output = run_c_search(program, graph_file, start, goal, algorithm)
-            found, steps, path = parse_c_output(output)
+            bfs_output = run_c_search(program, graph_file, start, goal, 'bfs')
+            bfs_found, bfs_steps, bfs_path = parse_c_output(bfs_output)
+
+            dfs_output = run_c_search(program, graph_file, start, goal, 'dfs_iter')
+            dfs_found, dfs_steps, dfs_path = parse_c_output(dfs_output)
         except Exception as e:
             messagebox.showerror('Ошибка', str(e))
             return
 
         self.result_text.delete('1.0', tk.END)
-        self.result_text.insert(tk.END, f'Алгоритм: {algorithm}\n')
         self.result_text.insert(tk.END, f'Старт: {start}\n')
         self.result_text.insert(tk.END, f'Цель: {goal}\n\n')
 
-        if found:
+        self.result_text.insert(tk.END, 'BFS\n')
+        self.result_text.insert(tk.END, '-' * 30 + '\n')
+        if bfs_found:
             self.result_text.insert(tk.END, 'Путь найден\n')
-            self.result_text.insert(tk.END, f'Шагов: {steps}\n')
-            self.result_text.insert(tk.END, 'Путь: ' + ' -> '.join(map(str, path)) + '\n')
-            self.draw_graph(path=path)
+            self.result_text.insert(tk.END, f'Шагов: {bfs_steps}\n')
+            self.result_text.insert(tk.END, 'Путь: ' + ' -> '.join(map(str, bfs_path)) + '\n\n')
         else:
             self.result_text.insert(tk.END, 'Путь не найден\n')
-            self.result_text.insert(tk.END, f'Шагов: {steps}\n')
-            self.draw_graph(path=None)
+            self.result_text.insert(tk.END, f'Шагов: {bfs_steps}\n\n')
+
+        self.result_text.insert(tk.END, 'DFS\n')
+        self.result_text.insert(tk.END, '-' * 30 + '\n')
+        if dfs_found:
+            self.result_text.insert(tk.END, 'Путь найден\n')
+            self.result_text.insert(tk.END, f'Шагов: {dfs_steps}\n')
+            self.result_text.insert(tk.END, 'Путь: ' + ' -> '.join(map(str, dfs_path)) + '\n')
+        else:
+            self.result_text.insert(tk.END, 'Путь не найден\n')
+            self.result_text.insert(tk.END, f'Шагов: {dfs_steps}\n')
+
+        self.draw_graph(self.bfs_canvas, path=bfs_path if bfs_found else None)
+        self.draw_graph(self.dfs_canvas, path=dfs_path if dfs_found else None)
 
 
 def main():
