@@ -82,26 +82,31 @@ def run_c_search(program_path, graph_file, start, goal, algorithm):
 
 
 def parse_c_output(output: str):
-    lines = [line.strip() for line in output.splitlines()]
+    result = {
+        'algorithm': '',
+        'status': 'ERROR',
+        'steps': 0,
+        'path': []
+    }
 
-    found = False
-    steps = 0
-    path = []
+    for line in output.splitlines():
+        line = line.strip()
 
-    for line in lines:
-        if line == 'FOUND':
-            found = True
-        elif line == 'NOT_FOUND':
-            found = False
+        if line.startswith('ALGORITHM:'):
+            result['algorithm'] = line.split(':', 1)[1].strip()
+
+        elif line.startswith('STATUS:'):
+            result['status'] = line.split(':', 1)[1].strip()
+
         elif line.startswith('STEPS:'):
-            steps = int(line.split(':', 1)[1].strip())
+            result['steps'] = int(line.split(':', 1)[1].strip())
+
         elif line.startswith('PATH:'):
-            rest = line.split(':', 1)[1].strip()
-            if rest:
-                path = list(map(int, rest.split()))
+            path_str = line.split(':', 1)[1].strip()
+            result['path'] = list(map(int, path_str.split())) if path_str else []
 
-    return found, steps, path
-
+    result['found'] = (result['status'] == 'FOUND')
+    return result
 
 # -------------------------
 # GUI
@@ -495,40 +500,34 @@ class GraphApp:
 
         try:
             bfs_output = run_c_search(program, graph_file, start, goal, 'bfs')
-            bfs_found, bfs_steps, bfs_path = parse_c_output(bfs_output)
+            bfs_result = parse_c_output(bfs_output)
 
-            dfs_output = run_c_search(program, graph_file, start, goal, 'dfs_iter')
-            dfs_found, dfs_steps, dfs_path = parse_c_output(dfs_output)
+            dfs_output = run_c_search(program, graph_file, start, goal, 'dfs_rec_path')
+            dfs_result = parse_c_output(dfs_output)
         except Exception as e:
             messagebox.showerror('Ошибка', str(e))
             return
 
         self.result_text.delete('1.0', tk.END)
-        self.result_text.insert(tk.END, f'Старт: {start}\n')
-        self.result_text.insert(tk.END, f'Цель: {goal}\n\n')
+        self.result_text.insert(tk.END, f'START: {start}\n')
+        self.result_text.insert(tk.END, f'GOAL: {goal}\n\n')
 
-        self.result_text.insert(tk.END, 'BFS\n')
-        self.result_text.insert(tk.END, '-' * 30 + '\n')
-        if bfs_found:
-            self.result_text.insert(tk.END, 'Путь найден\n')
-            self.result_text.insert(tk.END, f'Шагов: {bfs_steps}\n')
-            self.result_text.insert(tk.END, 'Путь: ' + ' -> '.join(map(str, bfs_path)) + '\n\n')
-        else:
-            self.result_text.insert(tk.END, 'Путь не найден\n')
-            self.result_text.insert(tk.END, f'Шагов: {bfs_steps}\n\n')
+        for result in (dfs_result, bfs_result):
+            self.result_text.insert(tk.END, f"ALGORITHM: {result['algorithm']}\n")
+            self.result_text.insert(tk.END, f"STATUS: {result['status']}\n")
+            self.result_text.insert(tk.END, f"STEPS: {result['steps']}\n")
 
-        self.result_text.insert(tk.END, 'DFS\n')
-        self.result_text.insert(tk.END, '-' * 30 + '\n')
-        if dfs_found:
-            self.result_text.insert(tk.END, 'Путь найден\n')
-            self.result_text.insert(tk.END, f'Шагов: {dfs_steps}\n')
-            self.result_text.insert(tk.END, 'Путь: ' + ' -> '.join(map(str, dfs_path)) + '\n')
-        else:
-            self.result_text.insert(tk.END, 'Путь не найден\n')
-            self.result_text.insert(tk.END, f'Шагов: {dfs_steps}\n')
+            if result['path']:
+                self.result_text.insert(
+                    tk.END,
+                    'PATH: ' + ' '.join(map(str, result['path'])) + '\n\n'
+                )
+            else:
+                self.result_text.insert(tk.END, 'PATH:\n\n')
 
-        self.draw_graph(self.bfs_canvas, path=bfs_path if bfs_found else None)
-        self.draw_graph(self.dfs_canvas, path=dfs_path if dfs_found else None)
+        self.draw_graph(self.bfs_canvas, path=bfs_result['path'] if bfs_result['found'] else None)
+        self.draw_graph(self.dfs_canvas, path=dfs_result['path'] if dfs_result['found'] else None)
+
 
 
 def main():

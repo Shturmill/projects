@@ -6,133 +6,143 @@
 
 
 typedef struct {
-    int size;
+    int  size;
     int **adj;
 } Graph;
 
-
 typedef struct {
     int *data;
-    int size;
-    int capacity;
+    int  size;
+    int  capacity;
 } IntList;
 
-
 typedef struct {
     int *data;
-    int head;
-    int tail;
-    int size;
-    int capacity;
+    int  head;
+    int  tail;
+    int  size;
+    int  capacity;
 } IntQueue;
 
-
 typedef struct {
     int *data;
-    int size;
-    int capacity;
+    int  size;
+    int  capacity;
 } IntStack;
 
 typedef enum {
-    SEARCH_ERROR = -1,
-    SEARCH_NOT_FOUND = 0,
-    SEARCH_FOUND = 1
+    SEARCH_ERROR     = -1,
+    SEARCH_NOT_FOUND =  0,
+    SEARCH_FOUND     =  1
 } SearchStatus;
 
 typedef struct {
     SearchStatus status;
-    int steps; 
-    IntList path;
+    int          steps;
+    IntList      path;
 } SearchResult;
 
-//Int list methods
+typedef enum {
+    ALG_BFS,
+    ALG_DFS_ITER,
+    ALG_DFS_REC,
+    ALG_DFS_REC_PATH,
+    ALG_COMPARE,
+    ALG_UNKNOWN
+} Algorithm;
 
-void list_init(IntList *list) {
-    list->data = NULL;
-    list->size = 0;
+
+static void list_init(IntList *list)
+{
+    list->data     = NULL;
+    list->size     = 0;
     list->capacity = 0;
 }
 
-void list_free(IntList *list) {
+
+static void list_free(IntList *list)
+{
     free(list->data);
-    list->data = NULL;
-    list->size = 0;
+    list->data     = NULL;
+    list->size     = 0;
     list->capacity = 0;
 }
 
-int list_resize(IntList *list, int new_capacity) {
-    int *tmp = (int *)realloc(list->data, (size_t)new_capacity * sizeof(int));
-    if (tmp == NULL) {
+static int list_resize(IntList *list, int new_capacity)
+{
+    int *tmp = realloc(list->data, (size_t)new_capacity * sizeof(int));
+    if (tmp == NULL)
         return 0;
-    }
 
-    list->data = tmp;
+    list->data     = tmp;
     list->capacity = new_capacity;
     return 1;
 }
 
-int list_push_back(IntList *list, int value) {
+static int list_push_back(IntList *list, int value)
+{
     if (list->size == list->capacity) {
-        int new_capacity = (list->capacity == 0) ? 4 : list->capacity * 2;
-        if (!list_resize(list, new_capacity)) {
+        int new_cap = (list->capacity == 0) ? 4 : list->capacity * 2;
+        if (!list_resize(list, new_cap))
             return 0;
-        }
     }
 
-    list->data[list->size] = value;
-    list->size++;
+    list->data[list->size++] = value;
     return 1;
 }
 
-int list_pop_back(IntList *list) {
-    if (list->size == 0) {
+static int list_pop_back(IntList *list)
+{
+    if (list->size == 0)
         return 0;
-    }
 
     list->size--;
     return 1;
 }
 
-// methods fot bfs
+//Int Queue
 
-void queue_init(IntQueue *queue) {
-    queue->data = NULL;
-    queue->head = 0;
-    queue->tail = 0;
-    queue->size = 0;
+static void queue_init(IntQueue *queue)
+{
+    queue->data     = NULL;
+    queue->head     = 0;
+    queue->tail     = 0;
+    queue->size     = 0;
     queue->capacity = 0;
 }
 
-void queue_free(IntQueue *queue) {
+static void queue_free(IntQueue *queue)
+{
     free(queue->data);
-    queue->data = NULL;
-    queue->head = 0;
-    queue->tail = 0;
-    queue->size = 0;
+    queue->data     = NULL;
+    queue->head     = 0;
+    queue->tail     = 0;
+    queue->size     = 0;
     queue->capacity = 0;
 }
 
-int queue_create(IntQueue *queue, int capacity) {
-    queue->data = (int *)malloc((size_t)capacity * sizeof(int));
-    if (queue->data == NULL) {
+static int queue_create(IntQueue *queue, int capacity)
+{
+    queue->data = malloc((size_t)capacity * sizeof(int));
+    if (queue->data == NULL)
         return 0;
-    }
 
-    queue->head = 0;
-    queue->tail = 0;
-    queue->size = 0;
+    queue->head     = 0;
+    queue->tail     = 0;
+    queue->size     = 0;
     queue->capacity = capacity;
     return 1;
 }
 
-int queue_is_empty(const IntQueue *queue) {
+static int queue_is_empty(const IntQueue *queue)
+{
     return queue->size == 0;
 }
 
-int queue_push(IntQueue *queue, int value) {
-    if (queue->size == queue->capacity) {
+static int queue_push(IntQueue *queue, int value)
+{
+    if (queue->size == queue->capacity)
         return 0;
-    }
 
     queue->data[queue->tail] = value;
     queue->tail = (queue->tail + 1) % queue->capacity;
@@ -140,92 +150,94 @@ int queue_push(IntQueue *queue, int value) {
     return 1;
 }
 
-int queue_pop(IntQueue *queue, int *value) {
-    if (queue->size == 0) {
+static int queue_pop(IntQueue *queue, int *value)
+{
+    if (queue->size == 0)
         return 0;
-    }
 
-    *value = queue->data[queue->head];
+    *value      = queue->data[queue->head];
     queue->head = (queue->head + 1) % queue->capacity;
     queue->size--;
     return 1;
 }
 
-// for iterative dfs
+//Int Stacks
 
-void stack_init(IntStack *stack) {
-    stack->data = NULL;
-    stack->size = 0;
+static void stack_init(IntStack *stack)
+{
+    stack->data     = NULL;
+    stack->size     = 0;
     stack->capacity = 0;
 }
 
-void stack_free(IntStack *stack) {
+static void stack_free(IntStack *stack)
+{
     free(stack->data);
-    stack->data = NULL;
-    stack->size = 0;
+    stack->data     = NULL;
+    stack->size     = 0;
     stack->capacity = 0;
 }
 
-int stack_resize(IntStack *stack, int new_capacity) {
-    int *tmp = (int *)realloc(stack->data, (size_t)new_capacity * sizeof(int));
-    if (tmp == NULL) {
+static int stack_resize(IntStack *stack, int new_capacity)
+{
+    int *tmp = realloc(stack->data, (size_t)new_capacity * sizeof(int));
+    if (tmp == NULL)
         return 0;
-    }
 
-    stack->data = tmp;
+    stack->data     = tmp;
     stack->capacity = new_capacity;
     return 1;
 }
 
-int stack_push(IntStack *stack, int value) {
+static int stack_push(IntStack *stack, int value)
+{
     if (stack->size == stack->capacity) {
-        int new_capacity = (stack->capacity == 0) ? 4 : stack->capacity * 2;
-        if (!stack_resize(stack, new_capacity)) {
+        int new_cap = (stack->capacity == 0) ? 4 : stack->capacity * 2;
+        if (!stack_resize(stack, new_cap))
             return 0;
-        }
     }
 
-    stack->data[stack->size] = value;
-    stack->size++;
+    stack->data[stack->size++] = value;
     return 1;
 }
 
-int stack_pop(IntStack *stack, int *value) {
-    if (stack->size == 0) {
+static int stack_pop(IntStack *stack, int *value)
+{
+    if (stack->size == 0)
         return 0;
-    }
 
-    stack->size--;
-    *value = stack->data[stack->size];
+    *value = stack->data[--stack->size];
     return 1;
 }
 
-int stack_is_empty(const IntStack *stack) {
+static int stack_is_empty(const IntStack *stack)
+{
     return stack->size == 0;
 }
 
-//GRAPH
-
-void graph_init_empty(Graph *g) {
+// Graph Methods
+static void graph_init_empty(Graph *g)
+{
     g->size = 0;
-    g->adj = NULL;
+    g->adj  = NULL;
 }
 
-int graph_init(Graph *g, int n) {
-    g->size = n;
-    g->adj = (int **)malloc((size_t)(n + 1) * sizeof(int *));
-    if (g->adj == NULL) {
-        return 0;
-    }
+static int graph_init(Graph *g, int n)
+{
+    int i;
 
-    for (int i = 0; i <= n; i++) {
-        g->adj[i] = (int *)calloc((size_t)(n + 1), sizeof(int));
+    g->size = n;
+    g->adj  = malloc((size_t)(n + 1) * sizeof(int *));
+    if (g->adj == NULL)
+        return 0;
+
+    for (i = 0; i <= n; i++) {
+        g->adj[i] = calloc((size_t)(n + 1), sizeof(int));
         if (g->adj[i] == NULL) {
-            for (int j = 0; j < i; j++) {
+            for (int j = 0; j < i; j++)
                 free(g->adj[j]);
-            }
             free(g->adj);
-            g->adj = NULL;
+            g->adj  = NULL;
             g->size = 0;
             return 0;
         }
@@ -234,33 +246,34 @@ int graph_init(Graph *g, int n) {
     return 1;
 }
 
-void free_graph(Graph *g) {
-    if (g == NULL || g->adj == NULL) {
+static void graph_free(Graph *g)
+{
+    if (g == NULL || g->adj == NULL)
         return;
-    }
 
-    for (int i = 0; i <= g->size; i++) {
+    for (int i = 0; i <= g->size; i++)
         free(g->adj[i]);
-    }
     free(g->adj);
 
-    g->adj = NULL;
+    g->adj  = NULL;
     g->size = 0;
 }
 
-void add_edge(Graph *g, int from, int to) {
-    if (from < 1 || from > g->size || to < 1 || to > g->size) {
+static void graph_add_edge(Graph *g, int from, int to)
+{
+    if (from < 1 || from > g->size || to < 1 || to > g->size)
         return;
-    }
     g->adj[from][to] = 1;
 }
 
-int read_graph_from_file(const char *filename, Graph *out_graph) {
-    FILE *f = fopen(filename, "r");
-    int n;
+static int graph_read_file(const char *filename, Graph *out)
+{
+    FILE *f;
+    int   n;
 
-    graph_init_empty(out_graph);
+    graph_init_empty(out);
 
+    f = fopen(filename, "r");
     if (f == NULL) {
         fprintf(stderr, "Не удалось открыть файл %s\n", filename);
         return 0;
@@ -272,7 +285,7 @@ int read_graph_from_file(const char *filename, Graph *out_graph) {
         return 0;
     }
 
-    if (!graph_init(out_graph, n)) {
+    if (!graph_init(out, n)) {
         fprintf(stderr, "Ошибка выделения памяти для графа\n");
         fclose(f);
         return 0;
@@ -280,41 +293,33 @@ int read_graph_from_file(const char *filename, Graph *out_graph) {
 
     for (int i = 0; i < n; i++) {
         int v;
-        if (fscanf(f, "%d", &v) != 1) {
+        if (fscanf(f, "%d", &v) != 1 || v < 1 || v > n) {
             fprintf(stderr, "Ошибка чтения номера вершины\n");
             fclose(f);
-            free_graph(out_graph);
+            graph_free(out);
             return 0;
         }
 
-        if (v < 1 || v > n) {
-            fprintf(stderr, "Некорректный номер вершины: %d\n", v);
-            fclose(f);
-            free_graph(out_graph);
-            return 0;
-        }
-
-        while (1) {
+        for (;;) {
             int to;
             if (fscanf(f, "%d", &to) != 1) {
                 fprintf(stderr, "Ошибка чтения смежной вершины\n");
                 fclose(f);
-                free_graph(out_graph);
+                graph_free(out);
                 return 0;
             }
 
-            if (to == 0) {
+            if (to == 0)
                 break;
-            }
 
             if (to < 1 || to > n) {
                 fprintf(stderr, "Некорректная смежная вершина: %d\n", to);
                 fclose(f);
-                free_graph(out_graph);
+                graph_free(out);
                 return 0;
             }
 
-            add_edge(out_graph, v, to);
+            graph_add_edge(out, v, to);
         }
     }
 
@@ -322,439 +327,348 @@ int read_graph_from_file(const char *filename, Graph *out_graph) {
     return 1;
 }
 
-
-void result_init(SearchResult *res) {
+static void result_init(SearchResult *res)
+{
     res->status = SEARCH_NOT_FOUND;
-    res->steps = 0;
+    res->steps  = 0;
     list_init(&res->path);
 }
 
-void result_free(SearchResult *res) {
+static void result_free(SearchResult *res)
+{
     list_free(&res->path);
     res->status = SEARCH_NOT_FOUND;
-    res->steps = 0;
+    res->steps  = 0;
 }
 
+// parent[v] == вершина, из которой впервые пришли в v (-1 если нет).
+// Возвращает 1 при успехе, 0 при ошибке памяти.
 
-
- //Восстанавливаем путь по массиву parent.
- //parent[v] = вершина, из которой впервые пришли в v.
- 
-int build_path(int start, int goal, const int *parent, int n, IntList *path) {
-    int *reverse_path = NULL;
-    int count = 0;
+static int build_path(int start, int goal, const int *parent, int n, IntList *path) {
     int current = goal;
+    IntList temp;
+    list_init(&temp);
 
-    if (start == goal) {
-        return list_push_back(path, start);
-    }
+    // Если пути до целевой вершины нет в массиве parent
+    if (parent[goal] == -1 && start != goal) return 1;
 
-    if (parent[goal] == -1) {
-        return 1;
-    }
-
-    reverse_path = (int *)malloc((size_t)(n + 1) * sizeof(int));
-    if (reverse_path == NULL) {
-        return 0;
-    }
-
+    // Шаг 1: Сборка пути в обратном порядке (от Goal до Start)
     while (current != -1) {
-        if (count > n) {
-            free(reverse_path);
-            return 0;
-        }
-
-        reverse_path[count] = current;
-        count++;
-
-        if (current == start) {
-            break;
-        }
+        list_push_back(&temp, current);
+        if (current == start) break;
         current = parent[current];
     }
 
-    for (int i = count - 1; i >= 0; i--) {
-        if (!list_push_back(path, reverse_path[i])) {
-            free(reverse_path);
+    // Шаг 2: Перенос пути в выходной список в правильном порядке
+    for (int i = temp.size - 1; i >= 0; i--) {
+        if (!list_push_back(path, temp.data[i])) {
+            list_free(&temp);
             return 0;
         }
     }
 
-    free(reverse_path);
+    list_free(&temp);
     return 1;
-}
-
-void print_path_machine(const IntList *path) {
-    for (int i = 0; i < path->size; i++) {
-        printf("%d", path->data[i]);
-        if (i + 1 < path->size) {
-            printf(" ");
-        }
-    }
-    printf("\n");
 }
 
 
 SearchResult bfs(const Graph *g, int start, int goal) {
     SearchResult res;
-    IntQueue queue;
+    IntQueue open; // Список Open (очередь FIFO)
     int *parent = NULL;
-    unsigned char *state = NULL; /* 0 = unseen, 1 = in_open, 2 = processed */
+    unsigned char *in_open = NULL;   // Флаги присутствия в Open
+    unsigned char *in_closed = NULL; // Флаги присутствия в Closed
 
     result_init(&res);
-    queue_init(&queue);
+    queue_init(&open);
 
-    parent = (int *)malloc((size_t)(g->size + 1) * sizeof(int));
-    state = (unsigned char *)calloc((size_t)(g->size + 1), sizeof(unsigned char));
-    if (parent == NULL || state == NULL) {
-        fprintf(stderr, "Ошибка выделения памяти для BFS\n");
+    parent = malloc((size_t)(g->size + 1) * sizeof(int));
+    in_open = calloc((size_t)(g->size + 1), sizeof(unsigned char));
+    in_closed = calloc((size_t)(g->size + 1), sizeof(unsigned char));
+
+    if (!parent || !in_open || !in_closed || !queue_create(&open, g->size + 1)) {
         res.status = SEARCH_ERROR;
-        free(parent);
-        free(state);
-        return res;
+        goto cleanup;
     }
 
-    if (!queue_create(&queue, g->size + 1)) {
-        fprintf(stderr, "Ошибка выделения памяти для очереди BFS\n");
-        res.status = SEARCH_ERROR;
-        free(parent);
-        free(state);
-        return res;
-    }
+    for (int i = 0; i <= g->size; i++) parent[i] = -1;
 
-    for (int i = 0; i <= g->size; i++) {
-        parent[i] = -1;
-    }
+    // Шаг 1: Инициализация. Поместить стартовую вершину в Open
+    queue_push(&open, start);
+    in_open[start] = 1;
 
-    if (!queue_push(&queue, start)) {
-        fprintf(stderr, "Ошибка помещения вершины в очередь BFS\n");
-        res.status = SEARCH_ERROR;
-        queue_free(&queue);
-        free(parent);
-        free(state);
-        return res;
-    }
-    state[start] = 1;
-
-    while (!queue_is_empty(&queue)) {
+    // Шаг 2: Основной цикл. Пока Open не пуст
+    while (!queue_is_empty(&open)) {
         int x;
-        if (!queue_pop(&queue, &x)) {
+        // Шаг 3: Извлечь первую вершину X из Open
+        queue_pop(&open, &x);
+
+        // Шаг 4: Переместить X в Closed
+        in_open[x] = 0;
+        in_closed[x] = 1;
+        res.steps++;
+
+        // Шаг 5: Проверка цели
+        if (x == goal) {
+            res.status = build_path(start, goal, parent, g->size, &res.path) ? SEARCH_FOUND : SEARCH_ERROR;
             break;
         }
 
-        state[x] = 2;
-        res.steps++;
-
-        if (x == goal) {
-            if (!build_path(start, goal, parent, g->size, &res.path)) {
-                fprintf(stderr, "Ошибка выделения памяти при восстановлении пути BFS\n");
-                res.status = SEARCH_ERROR;
-            } else {
-                res.status = SEARCH_FOUND;
-            }
-            queue_free(&queue);
-            free(parent);
-            free(state);
-            return res;
-        }
-
+        // Шаг 6: Раскрытие вершины (поиск потомков)
         for (int child = 1; child <= g->size; child++) {
-            if (g->adj[x][child] == 1 && state[child] == 0) {
-                if (!queue_push(&queue, child)) {
-                    fprintf(stderr, "Ошибка помещения вершины в очередь BFS\n");
-                    res.status = SEARCH_ERROR;
-                    queue_free(&queue);
-                    free(parent);
-                    free(state);
-                    return res;
+            if (g->adj[x][child] == 1) {
+                // Если потомка нет ни в Open, ни в Closed
+                if (!in_open[child] && !in_closed[child]) {
+                    // Шаг 7: Добавить потомка в конец Open
+                    queue_push(&open, child);
+                    in_open[child] = 1;
+                    parent[child] = x;
                 }
-                state[child] = 1;
-                parent[child] = x;
             }
         }
     }
 
-    queue_free(&queue);
-    free(parent);
-    free(state);
+cleanup:
+    queue_free(&open); free(parent); free(in_open); free(in_closed);
     return res;
 }
-
 
 SearchResult dfs_iterative(const Graph *g, int start, int goal) {
     SearchResult res;
-    IntStack stack;
+    IntStack open; // Список Open (стек LIFO)
     int *parent = NULL;
-    unsigned char *state = NULL; /* 0 = unseen, 1 = in_open, 2 = processed */
+    unsigned char *in_closed = NULL; 
 
     result_init(&res);
-    stack_init(&stack);
+    stack_init(&open);
 
-    parent = (int *)malloc((size_t)(g->size + 1) * sizeof(int));
-    state = (unsigned char *)calloc((size_t)(g->size + 1), sizeof(unsigned char));
-    if (parent == NULL || state == NULL) {
-        fprintf(stderr, "Ошибка выделения памяти для DFS\n");
+    parent = malloc((size_t)(g->size + 1) * sizeof(int));
+    in_closed = calloc((size_t)(g->size + 1), sizeof(unsigned char));
+
+    if (!parent || !in_closed) {
         res.status = SEARCH_ERROR;
-        free(parent);
-        free(state);
-        return res;
+        goto cleanup;
     }
+    for (int i = 0; i <= g->size; i++) parent[i] = -1;
 
-    for (int i = 0; i <= g->size; i++) {
-        parent[i] = -1;
-    }
+    // Шаг 1: Инициализация. Поместить старт в Open
+    stack_push(&open, start);
 
-    if (!stack_push(&stack, start)) {
-        fprintf(stderr, "Ошибка помещения вершины в стек DFS\n");
-        res.status = SEARCH_ERROR;
-        stack_free(&stack);
-        free(parent);
-        free(state);
-        return res;
-    }
-    state[start] = 1;
-
-    while (!stack_is_empty(&stack)) {
+    while (!stack_is_empty(&open)) {
         int x;
-        if (!stack_pop(&stack, &x)) {
+        // Шаг 2: Извлечь вершину X из начала Open 
+        stack_pop(&open, &x);
+
+        // Если вершина уже раскрыта ранее, пропускаем
+        if (in_closed[x]) continue;
+
+        // Шаг 3: Переместить X в Closed
+        in_closed[x] = 1;
+        res.steps++;
+
+        // Шаг 4: Проверка цели
+        if (x == goal) {
+            res.status = build_path(start, goal, parent, g->size, &res.path) ? SEARCH_FOUND : SEARCH_ERROR;
             break;
         }
 
-        state[x] = 2;
-        res.steps++;
-
-        if (x == goal) {
-            if (!build_path(start, goal, parent, g->size, &res.path)) {
-                fprintf(stderr, "Ошибка выделения памяти при восстановлении пути DFS\n");
-                res.status = SEARCH_ERROR;
-            } else {
-                res.status = SEARCH_FOUND;
-            }
-            stack_free(&stack);
-            free(parent);
-            free(state);
-            return res;
-        }
-
-        /*
-         * Идём с конца, чтобы стек дал привычный порядок обхода:
-         * меньшие номера вершин будут обрабатываться раньше.
-         */
+        // Шаг 5: Раскрытие вершины
         for (int child = g->size; child >= 1; child--) {
-            if (g->adj[x][child] == 1 && state[child] == 0) {
-                if (!stack_push(&stack, child)) {
-                    fprintf(stderr, "Ошибка помещения вершины в стек DFS\n");
-                    res.status = SEARCH_ERROR;
-                    stack_free(&stack);
-                    free(parent);
-                    free(state);
-                    return res;
-                }
-                state[child] = 1;
+            if (g->adj[x][child] == 1 && !in_closed[child]) {
+                // Шаг 6: Добавить потомка в начало Open
+                stack_push(&open, child);
                 parent[child] = x;
             }
         }
     }
 
-    stack_free(&stack);
-    free(parent);
-    free(state);
+cleanup:
+    stack_free(&open); free(parent); free(in_closed);
     return res;
 }
 
-
-int dfs_recursive_impl(const Graph *g, int x, int goal,
-                       unsigned char *visited, int *parent, int *steps) {
-    visited[x] = 1;
+static int dfs_rec_impl(const Graph *g, int x, int goal, unsigned char *closed, int *parent, int *steps) {
+    // Шаг 1: Добавить текущую вершину X в Closed
+    closed[x] = 1;
     (*steps)++;
 
-    if (x == goal) {
-        return 1;
-    }
+    // Шаг 2: Проверка цели
+    if (x == goal) return 1;
 
+    // Шаг 3: Раскрытие вершины X (перебор потомков)
     for (int child = 1; child <= g->size; child++) {
-        if (g->adj[x][child] == 1 && !visited[child]) {
+        if (g->adj[x][child] == 1 && !closed[child]) {
             parent[child] = x;
-            if (dfs_recursive_impl(g, child, goal, visited, parent, steps)) {
-                return 1;
+            // Шаг 4: Рекурсивный вызов для потомка
+            if (dfs_rec_impl(g, child, goal, closed, parent, steps)) {
+                return 1; // Проброс успеха вверх по стеку
             }
         }
     }
-
-    return 0;
+    return 0; // Тупик в данной ветке
 }
 
-SearchResult dfs_recursive(const Graph *g, int start, int goal) {
-    SearchResult res;
+static SearchResult dfs_recursive(const Graph *g, int start, int goal)
+{
+    SearchResult   res;
     unsigned char *visited = NULL;
-    int *parent = NULL;
+    int           *parent  = NULL;
 
     result_init(&res);
 
-    visited = (unsigned char *)calloc((size_t)(g->size + 1), sizeof(unsigned char));
-    parent = (int *)malloc((size_t)(g->size + 1) * sizeof(int));
-    if (visited == NULL || parent == NULL) {
-        fprintf(stderr, "Ошибка выделения памяти для рекурсивного DFS\n");
-        res.status = SEARCH_ERROR;
-        free(visited);
-        free(parent);
+
+    if (start == goal) {
+        list_push_back(&res.path, start);
+        res.status = SEARCH_FOUND;
+        res.steps  = 1;
         return res;
     }
 
-    for (int i = 0; i <= g->size; i++) {
+    visited = calloc((size_t)(g->size + 1), sizeof(unsigned char));
+    parent  = malloc((size_t)(g->size + 1) * sizeof(int));
+
+    if (!visited || !parent) {
+        fprintf(stderr, "Ошибка выделения памяти (DFS rec)\n");
+        res.status = SEARCH_ERROR;
+        goto cleanup;
+    }
+
+    for (int i = 0; i <= g->size; i++)
         parent[i] = -1;
+
+    if (dfs_rec_impl(g, start, goal, visited, parent, &res.steps)) {
+        res.status = build_path(start, goal, parent, g->size, &res.path)
+                     ? SEARCH_FOUND : SEARCH_ERROR;
     }
 
-    if (dfs_recursive_impl(g, start, goal, visited, parent, &res.steps)) {
-        if (!build_path(start, goal, parent, g->size, &res.path)) {
-            fprintf(stderr, "Ошибка выделения памяти при восстановлении пути dfs_rec\n");
-            res.status = SEARCH_ERROR;
-        } else {
-            res.status = SEARCH_FOUND;
-        }
-    }
-
+cleanup:
     free(visited);
     free(parent);
     return res;
 }
-
-/* =========================
-   DFS recursive with direct path building
-   ========================= */
 
 /*
  * Возвращает:
- *   1  - путь найден
- *   0  - путь не найден
- *  -1  - ошибка памяти
+ *   1  — путь найден
+ *   0  — путь не найден в этой ветке
+ *  -1  — ошибка памяти
  */
-int dfs_recursive_path_impl(const Graph *g, int x, int goal,
-                            unsigned char *visited, IntList *path, int *steps) {
-    visited[x] = 1;
+
+static int dfs_rec_path_impl(const Graph *g, int x, int goal, unsigned char *closed, IntList *path, int *steps) {
+    // Шаг 1: Поместить X в Closed и добавить в текущий путь Path
+    closed[x] = 1;
     (*steps)++;
+    if (!list_push_back(path, x)) return -1;
 
-    if (!list_push_back(path, x)) {
-        return -1;
-    }
+    // Шаг 2: Проверка цели
+    if (x == goal) return 1;
 
-    if (x == goal) {
-        return 1;
-    }
-
+    // Шаг 3: Перебор потомков
     for (int child = 1; child <= g->size; child++) {
-        if (g->adj[x][child] == 1 && !visited[child]) {
-            int child_result = dfs_recursive_path_impl(g, child, goal, visited, path, steps);
-            if (child_result != 0) {
-                return child_result;
-            }
+        if (g->adj[x][child] == 1 && !closed[child]) {
+            // Шаг 4: Рекурсивный поиск от потомка с обновленным Path
+            int result = dfs_rec_path_impl(g, child, goal, closed, path, steps);
+            if (result != 0) return result;
         }
     }
 
-    if (!list_pop_back(path)) {
-        return -1;
-    }
+    // Шаг 5: Откат. Если цель не найдена, удалить X из Path
+    list_pop_back(path);
     return 0;
 }
 
-SearchResult dfs_recursive_with_path(const Graph *g, int start, int goal) {
-    SearchResult res;
+static SearchResult dfs_recursive_with_path(const Graph *g, int start, int goal)
+{
+    SearchResult   res;
     unsigned char *visited = NULL;
-    int dfs_result;
+    int            r;
 
     result_init(&res);
 
-    visited = (unsigned char *)calloc((size_t)(g->size + 1), sizeof(unsigned char));
-    if (visited == NULL) {
-        fprintf(stderr, "Ошибка выделения памяти для dfs_rec_path\n");
+    if (start == goal) {
+        list_push_back(&res.path, start);
+        res.status = SEARCH_FOUND;
+        res.steps  = 1;
+        return res;
+    }
+
+    visited = calloc((size_t)(g->size + 1), sizeof(unsigned char));
+    if (!visited) {
+        fprintf(stderr, "Ошибка выделения памяти (DFS rec path)\n");
         res.status = SEARCH_ERROR;
         return res;
     }
 
-    dfs_result = dfs_recursive_path_impl(g, start, goal, visited, &res.path, &res.steps);
-    if (dfs_result < 0) {
-        fprintf(stderr, "Ошибка выделения памяти при построении пути dfs_rec_path\n");
+    r = dfs_rec_path_impl(g, start, goal, visited, &res.path, &res.steps);
+    if (r < 0)
         res.status = SEARCH_ERROR;
-    } else if (dfs_result > 0) {
+    else if (r > 0)
         res.status = SEARCH_FOUND;
-    }
 
     free(visited);
     return res;
 }
 
-//OUTPUT
+// OUTPUT
 
-void print_single_result(const char *name, const SearchResult *res) {
+static void print_path(const IntList *path)
+{
+    for (int i = 0; i < path->size; i++) {
+        if (i > 0)
+            printf(" ");
+        printf("%d", path->data[i]);
+    }
+    printf("\n");
+}
+
+static void print_result(const char *name, const SearchResult *res)
+{
     printf("ALGORITHM: %s\n", name);
 
-    if (res->status == SEARCH_ERROR) {
+    switch (res->status) {
+    case SEARCH_FOUND:
+        printf("STATUS: FOUND\n");
+        printf("STEPS: %d\n", res->steps);
+        printf("PATH: ");
+        print_path(&res->path);
+        break;
+
+    case SEARCH_NOT_FOUND:
+        printf("STATUS: NOT_FOUND\n");
+        printf("STEPS: %d\n", res->steps);
+        printf("PATH:\n");
+        break;
+
+    case SEARCH_ERROR:
         printf("STATUS: ERROR\n");
         printf("STEPS: %d\n", res->steps);
         printf("PATH:\n");
-        return;
+        break;
     }
-
-    if (res->status == SEARCH_FOUND) {
-        printf("STATUS: FOUND\n");
-    } else {
-        printf("STATUS: NOT_FOUND\n");
-    }
-
-    printf("STEPS: %d\n", res->steps);
-    printf("PATH: ");
-    print_path_machine(&res->path);
 }
 
-void print_legacy_result(const SearchResult *res) {
-    if (res->status == SEARCH_ERROR) {
-        printf("ERROR\n");
-        printf("STEPS: %d\n", res->steps);
-        printf("PATH:\n");
-        return;
+static void print_compare(const SearchResult *bfs_r,
+                          const SearchResult *dfs_iter_r,
+                          const SearchResult *dfs_rec_r,
+                          const SearchResult *dfs_rec_path_r)
+{
+    const char *names[4]          = { "bfs", "dfs_iter", "dfs_rec", "dfs_rec_path" };
+    const SearchResult *results[4] = { bfs_r, dfs_iter_r, dfs_rec_r, dfs_rec_path_r };
+    const char *best_name          = NULL;
+    int         best_steps         = INT_MAX;
+
+    for (int i = 0; i < 4; i++) {
+        print_result(names[i], results[i]);
+        if (i < 3)
+            printf("---\n");
     }
-
-    if (res->status == SEARCH_FOUND) {
-        printf("FOUND\n");
-    } else {
-        printf("NOT_FOUND\n");
-    }
-    printf("STEPS: %d\n", res->steps);
-    printf("PATH: ");
-    print_path_machine(&res->path);
-}
-
-void print_compare_summary(const SearchResult *bfs_res,
-                           const SearchResult *dfs_iter_res,
-                           const SearchResult *dfs_rec_res,
-                           const SearchResult *dfs_rec_path_res) {
-    const char *best_name = NULL;
-    int best_steps = INT_MAX;
-
-    print_single_result("bfs", bfs_res);
-    printf("---\n");
-    print_single_result("dfs_iter", dfs_iter_res);
-    printf("---\n");
-    print_single_result("dfs_rec", dfs_rec_res);
-    printf("---\n");
-    print_single_result("dfs_rec_path", dfs_rec_path_res);
     printf("===\n");
 
-    if (bfs_res->status == SEARCH_FOUND && bfs_res->steps < best_steps) {
-        best_steps = bfs_res->steps;
-        best_name = "bfs";
-    }
-    if (dfs_iter_res->status == SEARCH_FOUND && dfs_iter_res->steps < best_steps) {
-        best_steps = dfs_iter_res->steps;
-        best_name = "dfs_iter";
-    }
-    if (dfs_rec_res->status == SEARCH_FOUND && dfs_rec_res->steps < best_steps) {
-        best_steps = dfs_rec_res->steps;
-        best_name = "dfs_rec";
-    }
-    if (dfs_rec_path_res->status == SEARCH_FOUND && dfs_rec_path_res->steps < best_steps) {
-        best_steps = dfs_rec_path_res->steps;
-        best_name = "dfs_rec_path";
+    for (int i = 0; i < 4; i++) {
+        if (results[i]->status == SEARCH_FOUND && results[i]->steps < best_steps) {
+            best_steps = results[i]->steps;
+            best_name  = names[i];
+        }
     }
 
     if (best_name != NULL) {
@@ -767,42 +681,45 @@ void print_compare_summary(const SearchResult *bfs_res,
 }
 
 
-//CLI parsing
-int parse_int_arg(const char *text, int *value) {
-    char *end = NULL;
-    long parsed;
+static int parse_int(const char *text, int *value)
+{
+    char *end;
+    long  parsed;
 
-    errno = 0;
+    errno  = 0;
     parsed = strtol(text, &end, 10);
-    if (errno != 0 || end == text || *end != '\0') {
+    if (errno != 0 || end == text || *end != '\0')
         return 0;
-    }
-    if (parsed < INT_MIN || parsed > INT_MAX) {
+    if (parsed < INT_MIN || parsed > INT_MAX)
         return 0;
-    }
 
     *value = (int)parsed;
     return 1;
 }
 
-void print_usage(const char *prog) {
+static void print_usage(const char *prog)
+{
     fprintf(stderr, "Usage: %s <graph_file> <start> <goal> <algorithm>\n", prog);
-    fprintf(stderr, "Algorithms:\n");
-    fprintf(stderr, "  bfs\n");
-    fprintf(stderr, "  dfs_iter\n");
-    fprintf(stderr, "  dfs_rec\n");
-    fprintf(stderr, "  dfs_rec_path\n");
-    fprintf(stderr, "  compare\n");
+    fprintf(stderr, "Algorithms: bfs | dfs_iter | dfs_rec | dfs_rec_path | compare\n");
 }
 
-int main(int argc, char *argv[]) {
-    const char *filename;
-    const char *algorithm;
-    int start;
-    int goal;
-    Graph g;
+static Algorithm parse_algorithm(const char *s)
+{
+    if (strcmp(s, "bfs")          == 0) return ALG_BFS;
+    if (strcmp(s, "dfs_iter")     == 0) return ALG_DFS_ITER;
+    if (strcmp(s, "dfs_rec")      == 0) return ALG_DFS_REC;
+    if (strcmp(s, "dfs_rec_path") == 0) return ALG_DFS_REC_PATH;
+    if (strcmp(s, "compare")      == 0) return ALG_COMPARE;
+    return ALG_UNKNOWN;
+}
 
-    graph_init_empty(&g);
+int main(int argc, char *argv[])
+{
+    const char *filename;
+    int         start, goal;
+    Algorithm   alg;
+    Graph       g;
+    int         exit_code = 0;
 
     if (argc != 5) {
         print_usage(argv[0]);
@@ -810,76 +727,83 @@ int main(int argc, char *argv[]) {
     }
 
     filename = argv[1];
-    if (!parse_int_arg(argv[2], &start)) {
+
+    if (!parse_int(argv[2], &start)) {
         fprintf(stderr, "Некорректная начальная вершина: %s\n", argv[2]);
         return 1;
     }
-    if (!parse_int_arg(argv[3], &goal)) {
+    if (!parse_int(argv[3], &goal)) {
         fprintf(stderr, "Некорректная целевая вершина: %s\n", argv[3]);
         return 1;
     }
-    algorithm = argv[4];
 
-    if (!read_graph_from_file(filename, &g)) {
+    alg = parse_algorithm(argv[4]);
+    if (alg == ALG_UNKNOWN) {
+        fprintf(stderr, "Неизвестный алгоритм: %s\n", argv[4]);
+        print_usage(argv[0]);
         return 1;
     }
+
+    if (!graph_read_file(filename, &g))
+        return 1;
 
     if (start < 1 || start > g.size || goal < 1 || goal > g.size) {
-        fprintf(stderr, "Некорректные вершины. Допустимый диапазон: 1..%d\n", g.size);
-        free_graph(&g);
+        fprintf(stderr, "Вершины вне диапазона 1..%d\n", g.size);
+        graph_free(&g);
         return 1;
     }
 
-    if (strcmp(algorithm, "compare") == 0) {
-        SearchResult bfs_res = bfs(&g, start, goal);
-        SearchResult dfs_iter_res = dfs_iterative(&g, start, goal);
-        SearchResult dfs_rec_res = dfs_recursive(&g, start, goal);
-        SearchResult dfs_rec_path_res = dfs_recursive_with_path(&g, start, goal);
-        int exit_code = 0;
-
-        print_compare_summary(&bfs_res, &dfs_iter_res, &dfs_rec_res, &dfs_rec_path_res);
-
-        if (bfs_res.status == SEARCH_ERROR ||
-            dfs_iter_res.status == SEARCH_ERROR ||
-            dfs_rec_res.status == SEARCH_ERROR ||
-            dfs_rec_path_res.status == SEARCH_ERROR) {
-            exit_code = 1;
-        }
-
-        result_free(&bfs_res);
-        result_free(&dfs_iter_res);
-        result_free(&dfs_rec_res);
-        result_free(&dfs_rec_path_res);
-        free_graph(&g);
-        return exit_code;
-    } else {
-        SearchResult res;
-        int exit_code = 0;
-
-        result_init(&res);
-
-        if (strcmp(algorithm, "bfs") == 0) {
-            res = bfs(&g, start, goal);
-        } else if (strcmp(algorithm, "dfs_iter") == 0) {
-            res = dfs_iterative(&g, start, goal);
-        } else if (strcmp(algorithm, "dfs_rec") == 0) {
-            res = dfs_recursive(&g, start, goal);
-        } else if (strcmp(algorithm, "dfs_rec_path") == 0) {
-            res = dfs_recursive_with_path(&g, start, goal);
-        } else {
-            fprintf(stderr, "Неизвестный алгоритм: %s\n", algorithm);
-            print_usage(argv[0]);
-            free_graph(&g);
-            return 1;
-        }
-
-        print_legacy_result(&res);
-        if (res.status == SEARCH_ERROR) {
-            exit_code = 1;
-        }
-
+    switch (alg) {
+    case ALG_BFS: {
+        SearchResult res = bfs(&g, start, goal);
+        print_result("bfs", &res);
+        exit_code = (res.status == SEARCH_ERROR) ? 1 : 0;
         result_free(&res);
-        free_graph(&g);
-        return exit_code;
+        break;
     }
+    case ALG_DFS_ITER: {
+        SearchResult res = dfs_iterative(&g, start, goal);
+        print_result("dfs_iter", &res);
+        exit_code = (res.status == SEARCH_ERROR) ? 1 : 0;
+        result_free(&res);
+        break;
+    }
+    case ALG_DFS_REC: {
+        SearchResult res = dfs_recursive(&g, start, goal);
+        print_result("dfs_rec", &res);
+        exit_code = (res.status == SEARCH_ERROR) ? 1 : 0;
+        result_free(&res);
+        break;
+    }
+    case ALG_DFS_REC_PATH: {
+        SearchResult res = dfs_recursive_with_path(&g, start, goal);
+        print_result("dfs_rec_path", &res);
+        exit_code = (res.status == SEARCH_ERROR) ? 1 : 0;
+        result_free(&res);
+        break;
+    }
+    case ALG_COMPARE: {
+        SearchResult bfs_r      = bfs(&g, start, goal);
+        SearchResult dfs_iter_r = dfs_iterative(&g, start, goal);
+        SearchResult dfs_rec_r  = dfs_recursive(&g, start, goal);
+        SearchResult dfs_path_r = dfs_recursive_with_path(&g, start, goal);
+
+        print_compare(&bfs_r, &dfs_iter_r, &dfs_rec_r, &dfs_path_r);
+
+        if (bfs_r.status == SEARCH_ERROR || dfs_iter_r.status == SEARCH_ERROR
+                || dfs_rec_r.status == SEARCH_ERROR || dfs_path_r.status == SEARCH_ERROR)
+            exit_code = 1;
+
+        result_free(&bfs_r);
+        result_free(&dfs_iter_r);
+        result_free(&dfs_rec_r);
+        result_free(&dfs_path_r);
+        break;
+    }
+    case ALG_UNKNOWN:
+        break;
+    }
+
+    graph_free(&g);
+    return exit_code;
 }
