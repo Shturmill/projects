@@ -502,7 +502,7 @@ class GraphApp:
             bfs_output = run_c_search(program, graph_file, start, goal, 'bfs')
             bfs_result = parse_c_output(bfs_output)
 
-            dfs_output = run_c_search(program, graph_file, start, goal, 'dfs_rec_path')
+            dfs_output = run_c_search(program, graph_file, start, goal, 'dfs_iter')
             dfs_result = parse_c_output(dfs_output)
         except Exception as e:
             messagebox.showerror('Ошибка', str(e))

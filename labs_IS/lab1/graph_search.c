@@ -352,14 +352,14 @@ static int build_path(int start, int goal, const int *parent, int n, IntList *pa
     // Если пути до целевой вершины нет в массиве parent
     if (parent[goal] == -1 && start != goal) return 1;
 
-    // Шаг 1: Сборка пути в обратном порядке (от Goal до Start)
+    // Сборка пути в обратном порядке (от Goal до Start)
     while (current != -1) {
         list_push_back(&temp, current);
         if (current == start) break;
         current = parent[current];
     }
 
-    // Шаг 2: Перенос пути в выходной список в правильном порядке
+    // Перенос пути в выходящий список в правильном порядке
     for (int i = temp.size - 1; i >= 0; i--) {
         if (!list_push_back(path, temp.data[i])) {
             list_free(&temp);
@@ -374,56 +374,52 @@ static int build_path(int start, int goal, const int *parent, int n, IntList *pa
 
 SearchResult bfs(const Graph *g, int start, int goal) {
     SearchResult res;
-    IntQueue open; // Список Open (очередь FIFO)
+    IntQueue open;
     int *parent = NULL;
-    unsigned char *in_open = NULL;   // Флаги присутствия в Open
-    unsigned char *in_closed = NULL; // Флаги присутствия в Closed
+    unsigned char *in_open   = NULL;
+    unsigned char *in_closed = NULL;
 
     result_init(&res);
     queue_init(&open);
 
-    parent = malloc((size_t)(g->size + 1) * sizeof(int));
-    in_open = calloc((size_t)(g->size + 1), sizeof(unsigned char));
+    parent    = malloc((size_t)(g->size + 1) * sizeof(int));
+    in_open   = calloc((size_t)(g->size + 1), sizeof(unsigned char));
     in_closed = calloc((size_t)(g->size + 1), sizeof(unsigned char));
 
-    if (!parent || !in_open || !in_closed || !queue_create(&open, g->size + 1)) {
+    if (!parent || !in_open || !in_closed
+            || !queue_create(&open, g->size * g->size + 2)) {
         res.status = SEARCH_ERROR;
         goto cleanup;
     }
 
     for (int i = 0; i <= g->size; i++) parent[i] = -1;
 
-    // Шаг 1: Инициализация. Поместить стартовую вершину в Open
+    // Open = [Start]; Closed = []
     queue_push(&open, start);
     in_open[start] = 1;
 
-    // Шаг 2: Основной цикл. Пока Open не пуст
+    // While Open <> [] do
     while (!queue_is_empty(&open)) {
         int x;
-        // Шаг 3: Извлечь первую вершину X из Open
+        // X = первая вершина из Open; удалить X; добавить в Closed
         queue_pop(&open, &x);
-
-        // Шаг 4: Переместить X в Closed
-        in_open[x] = 0;
+        in_open[x]  = 0;
         in_closed[x] = 1;
         res.steps++;
 
-        // Шаг 5: Проверка цели
-        if (x == goal) {
-            res.status = build_path(start, goal, parent, g->size, &res.path) ? SEARCH_FOUND : SEARCH_ERROR;
-            break;
-        }
-
-        // Шаг 6: Раскрытие вершины (поиск потомков)
+        // Для каждого потомка X:
         for (int child = 1; child <= g->size; child++) {
-            if (g->adj[x][child] == 1) {
-                // Если потомка нет ни в Open, ни в Closed
-                if (!in_open[child] && !in_closed[child]) {
-                    // Шаг 7: Добавить потомка в конец Open
-                    queue_push(&open, child);
-                    in_open[child] = 1;
-                    parent[child] = x;
-                }
+            // If X = цель → вернуть True
+            if (x == goal) {
+                res.status = build_path(start, goal, parent, g->size, &res.path)
+                             ? SEARCH_FOUND : SEARCH_ERROR;
+                goto cleanup;
+            }
+            // Else If потомок не в Open и не в Closed -> добавить в конец Open
+            if (g->adj[x][child] == 1 && !in_open[child] && !in_closed[child]) {
+                queue_push(&open, child);
+                in_open[child] = 1;
+                parent[child]  = x;
             }
         }
     }
@@ -435,77 +431,84 @@ cleanup:
 
 SearchResult dfs_iterative(const Graph *g, int start, int goal) {
     SearchResult res;
-    IntStack open; // Список Open (стек LIFO)
-    int *parent = NULL;
-    unsigned char *in_closed = NULL; 
+    IntStack open;
+    int *parent    = NULL;
+    unsigned char *in_open   = NULL;
+    unsigned char *in_closed = NULL;
 
     result_init(&res);
     stack_init(&open);
 
-    parent = malloc((size_t)(g->size + 1) * sizeof(int));
+    parent    = malloc((size_t)(g->size + 1) * sizeof(int));
+    in_open   = calloc((size_t)(g->size + 1), sizeof(unsigned char));
     in_closed = calloc((size_t)(g->size + 1), sizeof(unsigned char));
 
-    if (!parent || !in_closed) {
+    if (!parent || !in_open || !in_closed) {
         res.status = SEARCH_ERROR;
         goto cleanup;
     }
     for (int i = 0; i <= g->size; i++) parent[i] = -1;
 
-    // Шаг 1: Инициализация. Поместить старт в Open
+    // Open = [Start]; Closed = []
     stack_push(&open, start);
+    in_open[start] = 1;
 
+    // While Open <> [] do
     while (!stack_is_empty(&open)) {
         int x;
-        // Шаг 2: Извлечь вершину X из начала Open 
+        // X = первая вершина из Open; удалить X; добавить в Closed
         stack_pop(&open, &x);
-
-        // Если вершина уже раскрыта ранее, пропускаем
-        if (in_closed[x]) continue;
-
-        // Шаг 3: Переместить X в Closed
+        in_open[x]   = 0;
         in_closed[x] = 1;
         res.steps++;
 
-        // Шаг 4: Проверка цели
-        if (x == goal) {
-            res.status = build_path(start, goal, parent, g->size, &res.path) ? SEARCH_FOUND : SEARCH_ERROR;
-            break;
+        // Для каждого потомка X
+        for (int child = g->size; child >= 1; child--) {
+            // If X = цель -> вернуть True
+            if (x == goal) {
+                res.status = build_path(start, goal, parent, g->size, &res.path)
+                             ? SEARCH_FOUND : SEARCH_ERROR;
+                goto cleanup;
+            }
+            // Else If потомок не в Open и не в Closed -> добавить в начало Open
+            if (g->adj[x][child] == 1 && !in_open[child] && !in_closed[child]) {
+                stack_push(&open, child);
+                in_open[child] = 1;
+                parent[child]  = x;
+            }
         }
 
-        // Шаг 5: Раскрытие вершины
-        for (int child = g->size; child >= 1; child--) {
-            if (g->adj[x][child] == 1 && !in_closed[child]) {
-                // Шаг 6: Добавить потомка в начало Open
-                stack_push(&open, child);
-                parent[child] = x;
-            }
+        if (x == goal) {
+            res.status = build_path(start, goal, parent, g->size, &res.path)
+                         ? SEARCH_FOUND : SEARCH_ERROR;
+            goto cleanup;
         }
     }
 
 cleanup:
-    stack_free(&open); free(parent); free(in_closed);
+    stack_free(&open); free(parent); free(in_open); free(in_closed);
     return res;
 }
 
-static int dfs_rec_impl(const Graph *g, int x, int goal, unsigned char *closed, int *parent, int *steps) {
-    // Шаг 1: Добавить текущую вершину X в Closed
+static int dfs_rec_impl(const Graph *g, int x, int goal,
+                        unsigned char *closed, int *parent, int *steps) {
+    // Добавить X в Closed
     closed[x] = 1;
     (*steps)++;
 
-    // Шаг 2: Проверка цели
+    // If X = цель -> вернуть True  (до цикла по потомкам)
     if (x == goal) return 1;
 
-    // Шаг 3: Раскрытие вершины X (перебор потомков)
+    // Для каждого child X: Else If child не в Closed -> DepthSearch(child)
     for (int child = 1; child <= g->size; child++) {
         if (g->adj[x][child] == 1 && !closed[child]) {
             parent[child] = x;
-            // Шаг 4: Рекурсивный вызов для потомка
-            if (dfs_rec_impl(g, child, goal, closed, parent, steps)) {
-                return 1; // Проброс успеха вверх по стеку
-            }
+            if (dfs_rec_impl(g, child, goal, closed, parent, steps))
+                return 1;
         }
     }
-    return 0; // Тупик в данной ветке
+
+    return 0;
 }
 
 static SearchResult dfs_recursive(const Graph *g, int start, int goal)
@@ -555,24 +558,24 @@ cleanup:
  */
 
 static int dfs_rec_path_impl(const Graph *g, int x, int goal, unsigned char *closed, IntList *path, int *steps) {
-    // Шаг 1: Поместить X в Closed и добавить в текущий путь Path
+    // Поместить X в Closed и добавить в текущий путь Path
     closed[x] = 1;
     (*steps)++;
     if (!list_push_back(path, x)) return -1;
-
-    // Шаг 2: Проверка цели
+ 
+    // Проверка цели
     if (x == goal) return 1;
-
-    // Шаг 3: Перебор потомков
+ 
+    // Перебор потомков
     for (int child = 1; child <= g->size; child++) {
         if (g->adj[x][child] == 1 && !closed[child]) {
-            // Шаг 4: Рекурсивный поиск от потомка с обновленным Path
+            // Рекурсивный поиск от потомка с обновленным Path
             int result = dfs_rec_path_impl(g, child, goal, closed, path, steps);
             if (result != 0) return result;
         }
     }
-
-    // Шаг 5: Откат. Если цель не найдена, удалить X из Path
+ 
+    // Откат. Если цель не найдена, удалить X из Path
     list_pop_back(path);
     return 0;
 }
