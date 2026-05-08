@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define FIRST_VERTEX 1
+#define END_MARKER   0
 
 typedef struct {
     int  size;
@@ -51,6 +53,21 @@ typedef enum {
     ALG_UNKNOWN
 } Algorithm;
 
+
+static int graph_last_vertex(const Graph *g)
+{
+    return FIRST_VERTEX + g->size - 1;
+}
+
+static int graph_storage_size(const Graph *g)
+{
+    return graph_last_vertex(g) + 1;
+}
+
+static int graph_valid_vertex(const Graph *g, int v)
+{
+    return v >= FIRST_VERTEX && v <= graph_last_vertex(g);
+}
 
 static void list_init(IntList *list)
 {
@@ -225,14 +242,15 @@ static void graph_init_empty(Graph *g)
 static int graph_init(Graph *g, int n)
 {
     int i;
+    int storage = FIRST_VERTEX + n;
 
     g->size = n;
-    g->adj  = malloc((size_t)(n + 1) * sizeof(int *));
+    g->adj  = malloc((size_t)storage * sizeof(int *));
     if (g->adj == NULL)
         return 0;
 
-    for (i = 0; i <= n; i++) {
-        g->adj[i] = calloc((size_t)(n + 1), sizeof(int));
+    for (i = 0; i < storage; i++) {
+        g->adj[i] = calloc((size_t)storage, sizeof(int));
         if (g->adj[i] == NULL) {
             for (int j = 0; j < i; j++)
                 free(g->adj[j]);
@@ -251,7 +269,8 @@ static void graph_free(Graph *g)
     if (g == NULL || g->adj == NULL)
         return;
 
-    for (int i = 0; i <= g->size; i++)
+    int storage = FIRST_VERTEX + g->size;
+    for (int i = 0; i < storage; i++)
         free(g->adj[i]);
     free(g->adj);
 
@@ -261,7 +280,7 @@ static void graph_free(Graph *g)
 
 static void graph_add_edge(Graph *g, int from, int to)
 {
-    if (from < 1 || from > g->size || to < 1 || to > g->size)
+    if (!graph_valid_vertex(g, from) || !graph_valid_vertex(g, to))
         return;
     g->adj[from][to] = 1;
 }
@@ -293,7 +312,7 @@ static int graph_read_file(const char *filename, Graph *out)
 
     for (int i = 0; i < n; i++) {
         int v;
-        if (fscanf(f, "%d", &v) != 1 || v < 1 || v > n) {
+        if (fscanf(f, "%d", &v) != 1 || !graph_valid_vertex(out, v)) {
             fprintf(stderr, "Ошибка чтения номера вершины\n");
             fclose(f);
             graph_free(out);
@@ -309,10 +328,10 @@ static int graph_read_file(const char *filename, Graph *out)
                 return 0;
             }
 
-            if (to == 0)
+            if (to == END_MARKER)
                 break;
 
-            if (to < 1 || to > n) {
+            if (!graph_valid_vertex(out, to)) {
                 fprintf(stderr, "Некорректная смежная вершина: %d\n", to);
                 fclose(f);
                 graph_free(out);
@@ -341,25 +360,31 @@ static void result_free(SearchResult *res)
     res->steps  = 0;
 }
 
-// parent[v] == вершина, из которой впервые пришли в v (-1 если нет).
-// Возвращает 1 при успехе, 0 при ошибке памяти.
-
-static int build_path(int start, int goal, const int *parent, int n, IntList *path) {
+static int build_path(int start, int goal, const int *parent, IntList *path)
+{
     int current = goal;
     IntList temp;
+
     list_init(&temp);
+    path->size = 0;
 
-    // Если пути до целевой вершины нет в массиве parent
-    if (parent[goal] == -1 && start != goal) return 1;
+    for (;;) {
+        if (!list_push_back(&temp, current)) {
+            list_free(&temp);
+            return 0;
+        }
 
-    // Сборка пути в обратном порядке (от Goal до Start)
-    while (current != -1) {
-        list_push_back(&temp, current);
-        if (current == start) break;
+        if (current == start)
+            break;
+
         current = parent[current];
+
+        if (current == -1) {
+            list_free(&temp);
+            return 0;
+        }
     }
 
-    // Перенос пути в выходящий список в правильном порядке
     for (int i = temp.size - 1; i >= 0; i--) {
         if (!list_push_back(path, temp.data[i])) {
             list_free(&temp);
@@ -382,20 +407,25 @@ SearchResult bfs(const Graph *g, int start, int goal) {
     result_init(&res);
     queue_init(&open);
 
-    parent    = malloc((size_t)(g->size + 1) * sizeof(int));
-    in_open   = calloc((size_t)(g->size + 1), sizeof(unsigned char));
-    in_closed = calloc((size_t)(g->size + 1), sizeof(unsigned char));
+    int storage = graph_storage_size(g);
+
+    parent    = malloc((size_t)storage * sizeof(int));
+    in_open   = calloc((size_t)storage, sizeof(unsigned char));
+    in_closed = calloc((size_t)storage, sizeof(unsigned char));
 
     if (!parent || !in_open || !in_closed
-            || !queue_create(&open, g->size * g->size + 2)) {
+            || !queue_create(&open, storage)) {
         res.status = SEARCH_ERROR;
         goto cleanup;
     }
 
-    for (int i = 0; i <= g->size; i++) parent[i] = -1;
+    for (int i = 0; i < storage; i++) parent[i] = -1;
 
     // Open = [Start]; Closed = []
-    queue_push(&open, start);
+    if (!queue_push(&open, start)) {
+        res.status = SEARCH_ERROR;
+        goto cleanup;
+    }
     in_open[start] = 1;
 
     // While Open <> [] do
@@ -403,21 +433,24 @@ SearchResult bfs(const Graph *g, int start, int goal) {
         int x;
         // X = первая вершина из Open; удалить X; добавить в Closed
         queue_pop(&open, &x);
-        in_open[x]  = 0;
+        in_open[x]   = 0;
         in_closed[x] = 1;
         res.steps++;
 
+        // If X = цель -> вернуть True
+        if (x == goal) {
+            res.status = build_path(start, goal, parent, &res.path) ? SEARCH_FOUND : SEARCH_ERROR;
+            goto cleanup;
+        }
+
         // Для каждого потомка X:
-        for (int child = 1; child <= g->size; child++) {
-            // If X = цель → вернуть True
-            if (x == goal) {
-                res.status = build_path(start, goal, parent, g->size, &res.path)
-                             ? SEARCH_FOUND : SEARCH_ERROR;
-                goto cleanup;
-            }
+        for (int child = FIRST_VERTEX; child <= graph_last_vertex(g); child++) {
             // Else If потомок не в Open и не в Closed -> добавить в конец Open
             if (g->adj[x][child] == 1 && !in_open[child] && !in_closed[child]) {
-                queue_push(&open, child);
+                if (!queue_push(&open, child)) {
+                    res.status = SEARCH_ERROR;
+                    goto cleanup;
+                }
                 in_open[child] = 1;
                 parent[child]  = x;
             }
@@ -439,18 +472,23 @@ SearchResult dfs_iterative(const Graph *g, int start, int goal) {
     result_init(&res);
     stack_init(&open);
 
-    parent    = malloc((size_t)(g->size + 1) * sizeof(int));
-    in_open   = calloc((size_t)(g->size + 1), sizeof(unsigned char));
-    in_closed = calloc((size_t)(g->size + 1), sizeof(unsigned char));
+    int storage = graph_storage_size(g);
+
+    parent    = malloc((size_t)storage * sizeof(int));
+    in_open   = calloc((size_t)storage, sizeof(unsigned char));
+    in_closed = calloc((size_t)storage, sizeof(unsigned char));
 
     if (!parent || !in_open || !in_closed) {
         res.status = SEARCH_ERROR;
         goto cleanup;
     }
-    for (int i = 0; i <= g->size; i++) parent[i] = -1;
+    for (int i = 0; i < storage; i++) parent[i] = -1;
 
     // Open = [Start]; Closed = []
-    stack_push(&open, start);
+    if (!stack_push(&open, start)) {
+        res.status = SEARCH_ERROR;
+        goto cleanup;
+    }
     in_open[start] = 1;
 
     // While Open <> [] do
@@ -462,26 +500,24 @@ SearchResult dfs_iterative(const Graph *g, int start, int goal) {
         in_closed[x] = 1;
         res.steps++;
 
-        // Для каждого потомка X
-        for (int child = g->size; child >= 1; child--) {
-            // If X = цель -> вернуть True
-            if (x == goal) {
-                res.status = build_path(start, goal, parent, g->size, &res.path)
-                             ? SEARCH_FOUND : SEARCH_ERROR;
-                goto cleanup;
-            }
+        // If X = цель -> вернуть True
+        if (x == goal) {
+            res.status = build_path(start, goal, parent, &res.path)
+                         ? SEARCH_FOUND : SEARCH_ERROR;
+            goto cleanup;
+        }
+
+        // Для каждого потомка X (обратный порядок → меньший номер идёт первым из стека)
+        for (int child = graph_last_vertex(g); child >= FIRST_VERTEX; child--) {
             // Else If потомок не в Open и не в Closed -> добавить в начало Open
             if (g->adj[x][child] == 1 && !in_open[child] && !in_closed[child]) {
-                stack_push(&open, child);
+                if (!stack_push(&open, child)) {
+                    res.status = SEARCH_ERROR;
+                    goto cleanup;
+                }
                 in_open[child] = 1;
                 parent[child]  = x;
             }
-        }
-
-        if (x == goal) {
-            res.status = build_path(start, goal, parent, g->size, &res.path)
-                         ? SEARCH_FOUND : SEARCH_ERROR;
-            goto cleanup;
         }
     }
 
@@ -496,11 +532,11 @@ static int dfs_rec_impl(const Graph *g, int x, int goal,
     closed[x] = 1;
     (*steps)++;
 
-    // If X = цель -> вернуть True  (до цикла по потомкам)
+    // If X = цель -> вернуть True
     if (x == goal) return 1;
 
     // Для каждого child X: Else If child не в Closed -> DepthSearch(child)
-    for (int child = 1; child <= g->size; child++) {
+    for (int child = FIRST_VERTEX; child <= graph_last_vertex(g); child++) {
         if (g->adj[x][child] == 1 && !closed[child]) {
             parent[child] = x;
             if (dfs_rec_impl(g, child, goal, closed, parent, steps))
@@ -519,16 +555,10 @@ static SearchResult dfs_recursive(const Graph *g, int start, int goal)
 
     result_init(&res);
 
+    int storage = graph_storage_size(g);
 
-    if (start == goal) {
-        list_push_back(&res.path, start);
-        res.status = SEARCH_FOUND;
-        res.steps  = 1;
-        return res;
-    }
-
-    visited = calloc((size_t)(g->size + 1), sizeof(unsigned char));
-    parent  = malloc((size_t)(g->size + 1) * sizeof(int));
+    visited = calloc((size_t)storage, sizeof(unsigned char));
+    parent  = malloc((size_t)storage * sizeof(int));
 
     if (!visited || !parent) {
         fprintf(stderr, "Ошибка выделения памяти (DFS rec)\n");
@@ -536,11 +566,11 @@ static SearchResult dfs_recursive(const Graph *g, int start, int goal)
         goto cleanup;
     }
 
-    for (int i = 0; i <= g->size; i++)
+    for (int i = 0; i < storage; i++)
         parent[i] = -1;
 
     if (dfs_rec_impl(g, start, goal, visited, parent, &res.steps)) {
-        res.status = build_path(start, goal, parent, g->size, &res.path)
+        res.status = build_path(start, goal, parent, &res.path)
                      ? SEARCH_FOUND : SEARCH_ERROR;
     }
 
@@ -550,31 +580,23 @@ cleanup:
     return res;
 }
 
-/*
- * Возвращает:
- *   1  — путь найден
- *   0  — путь не найден в этой ветке
- *  -1  — ошибка памяти
- */
-
 static int dfs_rec_path_impl(const Graph *g, int x, int goal, unsigned char *closed, IntList *path, int *steps) {
     // Поместить X в Closed и добавить в текущий путь Path
     closed[x] = 1;
     (*steps)++;
     if (!list_push_back(path, x)) return -1;
- 
+
     // Проверка цели
     if (x == goal) return 1;
- 
+
     // Перебор потомков
-    for (int child = 1; child <= g->size; child++) {
+    for (int child = FIRST_VERTEX; child <= graph_last_vertex(g); child++) {
         if (g->adj[x][child] == 1 && !closed[child]) {
-            // Рекурсивный поиск от потомка с обновленным Path
             int result = dfs_rec_path_impl(g, child, goal, closed, path, steps);
             if (result != 0) return result;
         }
     }
- 
+
     // Откат. Если цель не найдена, удалить X из Path
     list_pop_back(path);
     return 0;
@@ -588,14 +610,9 @@ static SearchResult dfs_recursive_with_path(const Graph *g, int start, int goal)
 
     result_init(&res);
 
-    if (start == goal) {
-        list_push_back(&res.path, start);
-        res.status = SEARCH_FOUND;
-        res.steps  = 1;
-        return res;
-    }
+    int storage = graph_storage_size(g);
 
-    visited = calloc((size_t)(g->size + 1), sizeof(unsigned char));
+    visited = calloc((size_t)storage, sizeof(unsigned char));
     if (!visited) {
         fprintf(stderr, "Ошибка выделения памяти (DFS rec path)\n");
         res.status = SEARCH_ERROR;
@@ -750,8 +767,8 @@ int main(int argc, char *argv[])
     if (!graph_read_file(filename, &g))
         return 1;
 
-    if (start < 1 || start > g.size || goal < 1 || goal > g.size) {
-        fprintf(stderr, "Вершины вне диапазона 1..%d\n", g.size);
+    if (!graph_valid_vertex(&g, start) || !graph_valid_vertex(&g, goal)) {
+        fprintf(stderr, "Вершины вне диапазона %d..%d\n", FIRST_VERTEX, graph_last_vertex(&g));
         graph_free(&g);
         return 1;
     }
