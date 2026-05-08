@@ -3,9 +3,9 @@
 #include <stdbool.h>
 
 typedef struct State {
-    int *board;
-    int row;
-    struct State *parent;
+    int *board;              // board[row] = col, если в строке row стоит ферзь; иначе -1
+    int row;                 // глубина состояния: сколько ферзей уже поставлено
+    struct State *parent;    // родитель для восстановления пути
 } State;
 
 typedef struct Node {
@@ -20,30 +20,35 @@ typedef struct {
 } List;
 
 typedef struct {
-    int solutionCount;
-    int expandedStates;
-    int stepsToFirstSolution;
+    int solutionCount;        // сколько целевых состояний найдено
+    int expandedStates;       // счетчик шагов: сколько состояний извлечено/рассмотрено
+    int stepsToFirstSolution; // номер шага, на котором впервые найдено решение; -1, если нет
 } SearchStats;
 
+typedef enum {
+    METHOD_BFS = 1,
+    METHOD_DFS_ITER = 2,
+    METHOD_DFS_REC = 3,
+    METHOD_DFS_REC_PATH = 4,
+    METHOD_ALL = 5
+} SearchMethod;
 
-// Инициализация списка
-void initList(List *lst)
+// Работа со списками OPEN, CLOSED и PATH.
+
+static void initList(List *lst)
 {
     lst->front = NULL;
     lst->back = NULL;
     lst->size = 0;
 }
 
-
-// Проверка пустоты списка
-bool isListEmpty(const List *lst)
+static bool isListEmpty(const List *lst)
 {
     return lst->front == NULL;
 }
 
-
 // Удаление первого элемента списка
-State *removeFirst(List *lst)
+static State *removeFirst(List *lst)
 {
     if (lst->front == NULL) {
         return NULL;
@@ -62,13 +67,12 @@ State *removeFirst(List *lst)
     return state;
 }
 
-
 // Добавление нового элемента в начало списка
-void addFirst(List *lst, State *state)
+static void addFirst(List *lst, State *state)
 {
     Node *nd = (Node *)malloc(sizeof(Node));
     if (!nd) {
-        fprintf(stderr, "malloc node\n");
+        fprintf(stderr, "Ошибка выделения памяти для элемента списка.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -83,13 +87,12 @@ void addFirst(List *lst, State *state)
     lst->size++;
 }
 
-
 // Добавление нового элемента в конец списка
-void addLast(List *lst, State *state)
+static void addLast(List *lst, State *state)
 {
     Node *nd = (Node *)malloc(sizeof(Node));
     if (!nd) {
-        fprintf(stderr, "malloc node\n");
+        fprintf(stderr, "Ошибка выделения памяти для элемента списка.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -106,9 +109,38 @@ void addLast(List *lst, State *state)
     lst->size++;
 }
 
+// Удаление последнего узла без освобождения состояния: нужно для Path при откате рекурсии
+static State *removeLastNodeOnly(List *lst)
+{
+    if (lst->front == NULL) {
+        return NULL;
+    }
 
-// Определение наличия элемента в списке
-bool contains(const List *lst, const State *s)
+    Node *prev = NULL;
+    Node *cur = lst->front;
+
+    while (cur->next != NULL) {
+        prev = cur;
+        cur = cur->next;
+    }
+
+    State *state = cur->state;
+
+    if (prev == NULL) {
+        lst->front = NULL;
+        lst->back = NULL;
+    } else {
+        prev->next = NULL;
+        lst->back = prev;
+    }
+
+    lst->size--;
+    free(cur);
+    return state;
+}
+
+// Определение наличия состояния в списке
+static bool contains(const List *lst, const State *s)
 {
     for (Node *cur = lst->front; cur != NULL; cur = cur->next) {
         const State *t = cur->state;
@@ -117,14 +149,15 @@ bool contains(const List *lst, const State *s)
             continue;
         }
 
-        bool eq = true;
-        for (int i = 0; i < s->row && eq; i++) {
+        bool equal = true;
+        for (int i = 0; i < s->row; i++) {
             if (t->board[i] != s->board[i]) {
-                eq = false;
+                equal = false;
+                break;
             }
         }
 
-        if (eq) {
+        if (equal) {
             return true;
         }
     }
@@ -132,19 +165,20 @@ bool contains(const List *lst, const State *s)
     return false;
 }
 
+// Работа с состояниями задачи о ферзях.
 
-State *createState(int N, int row)
+static State *createState(int N, int row)
 {
     State *s = (State *)malloc(sizeof(State));
     if (!s) {
-        fprintf(stderr, "malloc State\n");
+        fprintf(stderr, "Ошибка выделения памяти для состояния.\n");
         exit(EXIT_FAILURE);
     }
 
-    s->board = (int *)malloc(N * sizeof(int));
+    s->board = (int *)malloc((size_t)N * sizeof(int));
     if (!s->board) {
         free(s);
-        fprintf(stderr, "malloc board\n");
+        fprintf(stderr, "Ошибка выделения памяти для доски.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -158,12 +192,11 @@ State *createState(int N, int row)
     return s;
 }
 
-
-State *cloneState(const State *src, int N)
+static State *cloneState(const State *src, int N)
 {
     State *dst = createState(N, src->row);
 
-    for (int i = 0; i < src->row; i++) {
+    for (int i = 0; i < N; i++) {
         dst->board[i] = src->board[i];
     }
 
@@ -171,8 +204,7 @@ State *cloneState(const State *src, int N)
     return dst;
 }
 
-
-void freeState(State *s)
+static void freeState(State *s)
 {
     if (!s) {
         return;
@@ -182,83 +214,88 @@ void freeState(State *s)
     free(s);
 }
 
-
-// Полная очистка списка
-void freeList(List *lst)
+// Полная очистка списка вместе с состояниями
+static void freeListWithStates(List *lst)
 {
     while (!isListEmpty(lst)) {
         freeState(removeFirst(lst));
     }
 }
 
+// Очистка только узлов списка: состояния принадлежат CLOSED
+static void freeListNodesOnly(List *lst)
+{
+    while (!isListEmpty(lst)) {
+        (void)removeFirst(lst);
+    }
+}
 
-// Проверка допустимости постановки ферзя
-bool isSafe(const int *board, int row, int col)
+// Проверка допустимости применения оператора: можно ли поставить ферзя в (row, col)
+static bool isSafe(const int *board, int row, int col)
 {
     for (int i = 0; i < row; i++) {
         if (board[i] == col || abs(board[i] - col) == abs(i - row)) {
             return false;
         }
     }
+
     return true;
 }
 
-
-// Проверка достижения целевого состояния
-bool isGoal(const State *state, int Q)
+// Проверка достижения целевого состояния: поставлено Q ферзей
+static bool isGoal(const State *state, int Q)
 {
     return state->row == Q;
 }
 
-
-// Процедура порождения дочерних вершин путем применения допустимых операторов
-void createChildren(const State *parent, int N, bool reverseOrder, List *children)
+// Порождение дочерних вершин путем применения допустимых операторов
+static void createChildren(const State *parent, int N, bool reverseOrder, List *children)
 {
     initList(children);
 
-    // Для каждого оператора // Цикл по всем операторам
-    // В задаче о ферзях оператором является постановка ферзя
-    // в очередную строку в один из допустимых столбцов
+    if (parent->row >= N) {
+        return;
+    }
 
     if (reverseOrder) {
         for (int col = N - 1; col >= 0; col--) {
-
-            // Проверить ее допустимость
             if (!isSafe(parent->board, parent->row, col)) {
                 continue;
             }
 
-            // Создать дочернюю вершину
             State *child = cloneState(parent, N);
             child->board[parent->row] = col;
             child->row = parent->row + 1;
             child->parent = (State *)parent;
-
             addLast(children, child);
         }
     } else {
         for (int col = 0; col < N; col++) {
-
-            // Проверить ее допустимость
             if (!isSafe(parent->board, parent->row, col)) {
                 continue;
             }
 
-            // Создать дочернюю вершину
             State *child = cloneState(parent, N);
             child->board[parent->row] = col;
             child->row = parent->row + 1;
             child->parent = (State *)parent;
-
             addLast(children, child);
         }
     }
 }
 
+// Вывод решений и статистики.
 
-void printBoard(const int *board, int N)
+static void printBoard(const int *board, int N)
 {
+    printf("   ");
+    for (int c = 0; c < N; c++) {
+        printf("%2d ", c + 1);
+    }
+    printf("\n");
+
     for (int r = 0; r < N; r++) {
+        printf("%2d ", r + 1);
         for (int c = 0; c < N; c++) {
             printf(board[r] == c ? " Q " : " . ");
         }
@@ -266,8 +303,8 @@ void printBoard(const int *board, int N)
     }
 }
 
-
-void printSolution(const State *goal, int N, int *solutionCount)
+// Восстановление пути через parent: используется BFS, итерационным DFS и обычным рекурсивным DFS
+static void printSolutionByParent(const State *goal, int N, int *solutionCount)
 {
     (*solutionCount)++;
     printf("=== Решение %d ===\n", *solutionCount);
@@ -277,9 +314,9 @@ void printSolution(const State *goal, int N, int *solutionCount)
         depth++;
     }
 
-    const State **path = (const State **)malloc(depth * sizeof(State *));
+    const State **path = (const State **)malloc((size_t)depth * sizeof(State *));
     if (!path) {
-        fprintf(stderr, "malloc path\n");
+        fprintf(stderr, "Ошибка выделения памяти для восстановления пути.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -292,11 +329,7 @@ void printSolution(const State *goal, int N, int *solutionCount)
     for (int i = depth - 1; i > 0; i--) {
         int rowPlaced = path[i]->row;
         int colPlaced = path[i - 1]->board[rowPlaced];
-
-        printf("  Шаг %d: строка %d -> столбец %d\n",
-               depth - i,
-               rowPlaced + 1,
-               colPlaced + 1);
+        printf("  Шаг %d: строка %d -> столбец %d\n", depth - i, rowPlaced + 1, colPlaced + 1);
     }
 
     printf("Доска:\n");
@@ -306,13 +339,51 @@ void printSolution(const State *goal, int N, int *solutionCount)
     free(path);
 }
 
-
-void printStats(const char *methodName, const SearchStats *stats)
+// Непосредственный вывод пути Path
+static void printSolutionByPath(const List *path, int N, int *solutionCount)
 {
-    printf("%s: всего решений = %d | раскрыто состояний = %d | шагов до первого решения = ",
-           methodName,
-           stats->solutionCount,
-           stats->expandedStates);
+    (*solutionCount)++;
+    printf("=== Решение %d ===\n", *solutionCount);
+    printf("Последовательность операторов Path (строка -> столбец):\n");
+
+    Node *prev = path->front;
+    Node *cur = (prev != NULL) ? prev->next : NULL;
+    int step = 1;
+
+    while (prev != NULL && cur != NULL) {
+        int rowPlaced = prev->state->row;
+        int colPlaced = cur->state->board[rowPlaced];
+        printf("  Шаг %d: строка %d -> столбец %d\n", step, rowPlaced + 1, colPlaced + 1);
+
+        prev = cur;
+        cur = cur->next;
+        step++;
+    }
+
+    printf("Доска:\n");
+    if (path->back != NULL) {
+        printBoard(path->back->state->board, N);
+    }
+    printf("\n");
+}
+
+static void initStats(SearchStats *stats)
+{
+    stats->solutionCount = 0;
+    stats->expandedStates = 0;
+    stats->stepsToFirstSolution = -1;
+}
+
+static void registerSolutionStep(SearchStats *stats)
+{
+    if (stats->stepsToFirstSolution == -1) {
+        stats->stepsToFirstSolution = stats->expandedStates;
+    }
+}
+
+static void printStats(const char *methodName, const SearchStats *stats)
+{
+    printf("%s: всего решений = %d | раскрыто состояний = %d | шагов до первого решения = ", methodName, stats->solutionCount, stats->expandedStates);
 
     if (stats->stepsToFirstSolution == -1) {
         printf("не найдено\n\n");
@@ -321,55 +392,45 @@ void printStats(const char *methodName, const SearchStats *stats)
     }
 }
 
-
-// Поиск в ширину
-SearchStats solveBFS(int N, int Q)
+static SearchStats solveBFS(int N, int Q)
 {
     List openList;
     List closedList;
+    SearchStats stats;
 
     initList(&openList);
     initList(&closedList);
+    initStats(&stats);
 
-    SearchStats stats;
-    stats.solutionCount = 0;
-    stats.expandedStates = 0;
-    stats.stepsToFirstSolution = -1;
+    State *start = createState(N, 0);
 
-    State *initial = createState(N, 0);
-
-    // Open = [Start]; // инициализация
-    addLast(&openList, initial);
+    // Open = [Start]
+    addLast(&openList, start);
 
     // Closed = []
 
-    // While Open <> [] do // еще есть вершины
+    // While Open <> []
     while (!isListEmpty(&openList)) {
-
-        // X = первая вершина из Open // выбрать первую вершину из Open
+        // X = первая вершина из Open; удалить X из Open
         State *X = removeFirst(&openList);
+
+        // Добавить X в Closed
+        addLast(&closedList, X);
         stats.expandedStates++;
 
-        // Добавить вершину X в список Closed
-        addLast(&closedList, X);
+        // If X = цель then решение найдено
+        if (isGoal(X, Q)) {
+            registerSolutionStep(&stats);
+            printSolutionByParent(X, N, &stats.solutionCount);
+            continue;
+        }
 
         List children;
         createChildren(X, N, false, &children);
 
-        // Для каждого потомка X // цикл по всем потомкам X
+        // Для каждого потомка X
         while (!isListEmpty(&children)) {
             State *child = removeFirst(&children);
-
-            // If X = цель then вернуть True // цель найдена
-            if (isGoal(child, Q)) {
-                if (stats.stepsToFirstSolution == -1) {
-                    stats.stepsToFirstSolution = stats.expandedStates;
-                }
-
-                printSolution(child, N, &stats.solutionCount);
-                freeState(child);
-                continue;
-            }
 
             // If он не в списке Open или Closed then добавить в конец списка Open
             if (!contains(&openList, child) && !contains(&closedList, child)) {
@@ -380,49 +441,51 @@ SearchStats solveBFS(int N, int Q)
         }
     }
 
-    freeList(&openList);
-    freeList(&closedList);
-
+    freeListWithStates(&openList);
+    freeListWithStates(&closedList);
     return stats;
 }
 
-
-// Поиск в глубину с ограничением глубины просмотра дерева
-SearchStats solveDFS(int N, int Q, int maxDepth)
+static SearchStats solveDFSIterative(int N, int Q, int maxDepth)
 {
     List openList;
     List closedList;
+    SearchStats stats;
 
     initList(&openList);
     initList(&closedList);
+    initStats(&stats);
 
-    SearchStats stats;
-    stats.solutionCount = 0;
-    stats.expandedStates = 0;
-    stats.stepsToFirstSolution = -1;
-
-    State *initial = createState(N, 0);
+    State *start = createState(N, 0);
 
     // Open = [Start]
-    addFirst(&openList, initial);
+    addFirst(&openList, start);
 
     // Closed = []
 
-    // While Open <> [] do
+    // While Open <> []
     while (!isListEmpty(&openList)) {
-
-        // X = первая вершина из Open
+        // X = первая вершина из Open; удалить X из Open
         State *X = removeFirst(&openList);
+
+        // Добавить X в Closed
+        addLast(&closedList, X);
         stats.expandedStates++;
 
-        // Добавить вершину X в список Closed
-        addLast(&closedList, X);
+        // If X = цель then решение найдено
+        if (isGoal(X, Q)) {
+            registerSolutionStep(&stats);
+            printSolutionByParent(X, N, &stats.solutionCount);
+            continue;
+        }
 
+        // Ограниченный перебор в глубину: ниже maxDepth не идем
         if (X->row >= maxDepth) {
             continue;
         }
 
         List children;
+        // reverseOrder нужен, чтобы при добавлении в начало OPEN столбцы просматривались слева направо
         createChildren(X, N, true, &children);
 
         // Для каждого потомка X
@@ -430,17 +493,6 @@ SearchStats solveDFS(int N, int Q, int maxDepth)
             State *child = removeFirst(&children);
 
             if (child->row > maxDepth) {
-                freeState(child);
-                continue;
-            }
-
-            // If X = цель then вернуть True
-            if (isGoal(child, Q)) {
-                if (stats.stepsToFirstSolution == -1) {
-                    stats.stepsToFirstSolution = stats.expandedStates;
-                }
-
-                printSolution(child, N, &stats.solutionCount);
                 freeState(child);
                 continue;
             }
@@ -454,14 +506,130 @@ SearchStats solveDFS(int N, int Q, int maxDepth)
         }
     }
 
-    freeList(&openList);
-    freeList(&closedList);
-
+    freeListWithStates(&openList);
+    freeListWithStates(&closedList);
     return stats;
 }
 
+static void dfsRecursiveImpl(State *X, int N, int Q, int maxDepth, List *closedList, SearchStats *stats)
+{
+    // Добавить вершину X в список Closed
+    addLast(closedList, X);
+    stats->expandedStates++;
 
-int readInt(const char *prompt, int lo, int hi)
+    // If X = цель then распечатать путь
+    if (isGoal(X, Q)) {
+        registerSolutionStep(stats);
+        printSolutionByParent(X, N, &stats->solutionCount);
+        return;
+    }
+
+    // Ограничение глубины просмотра
+    if (X->row >= maxDepth) {
+        return;
+    }
+
+    List children;
+    createChildren(X, N, false, &children);
+
+    // Для каждого child
+    while (!isListEmpty(&children)) {
+        State *child = removeFirst(&children);
+
+        if (child->row > maxDepth) {
+            freeState(child);
+            continue;
+        }
+
+        // Else If child не в списке Closed then DepthSearch(child)
+        if (!contains(closedList, child)) {
+            dfsRecursiveImpl(child, N, Q, maxDepth, closedList, stats);
+        } else {
+            freeState(child);
+        }
+    }
+}
+
+static SearchStats solveDFSRecursive(int N, int Q, int maxDepth)
+{
+    List closedList;
+    SearchStats stats;
+
+    initList(&closedList);
+    initStats(&stats);
+
+    State *start = createState(N, 0);
+    dfsRecursiveImpl(start, N, Q, maxDepth, &closedList, &stats);
+
+    freeListWithStates(&closedList);
+    return stats;
+}
+
+static void dfsRecursivePathImpl(State *X, int N, int Q, int maxDepth, List *closedList, List *path, SearchStats *stats)
+{
+    // Добавить вершину X в список Closed
+    addLast(closedList, X);
+    stats->expandedStates++;
+
+    // Path = Path + X
+    addLast(path, X);
+
+    // If X = цель then распечатать Path
+    if (isGoal(X, Q)) {
+        registerSolutionStep(stats);
+        printSolutionByPath(path, N, &stats->solutionCount);
+        removeLastNodeOnly(path);
+        return;
+    }
+
+    // Ограничение глубины просмотра
+    if (X->row < maxDepth) {
+        List children;
+        createChildren(X, N, false, &children);
+
+        // Для каждого child
+        while (!isListEmpty(&children)) {
+            State *child = removeFirst(&children);
+
+            if (child->row > maxDepth) {
+                freeState(child);
+                continue;
+            }
+
+            // Else If child не в списке Closed then DepthSearch(child, Path + child)
+            if (!contains(closedList, child)) {
+                dfsRecursivePathImpl(child, N, Q, maxDepth, closedList, path, stats);
+            } else {
+                freeState(child);
+            }
+        }
+    }
+
+    // Откат Path при возврате из рекурсии
+    removeLastNodeOnly(path);
+}
+
+static SearchStats solveDFSRecursiveWithPath(int N, int Q, int maxDepth)
+{
+    List closedList;
+    List path;
+    SearchStats stats;
+
+    initList(&closedList);
+    initList(&path);
+    initStats(&stats);
+
+    State *start = createState(N, 0);
+    dfsRecursivePathImpl(start, N, Q, maxDepth, &closedList, &path, &stats);
+
+    freeListNodesOnly(&path);
+    freeListWithStates(&closedList);
+    return stats;
+}
+
+// Пользовательский ввод и сравнение.
+
+static int readInt(const char *prompt, int lo, int hi)
 {
     int v;
     int rc;
@@ -481,43 +649,114 @@ int readInt(const char *prompt, int lo, int hi)
     }
 }
 
+static const char *bestBySteps(const SearchStats *bfsStats, const SearchStats *dfsIterStats, const SearchStats *dfsRecStats, const SearchStats *dfsPathStats)
+{
+    const char *bestName = NULL;
+    int bestSteps = 0;
+
+    const char *names[4] = {"BFS", "DFS итерационный", "DFS рекурсивный", "DFS рекурсивный с Path"};
+    const SearchStats *stats[4] = {bfsStats, dfsIterStats, dfsRecStats, dfsPathStats};
+
+    for (int i = 0; i < 4; i++) {
+        if (stats[i] == NULL || stats[i]->stepsToFirstSolution == -1) {
+            continue;
+        }
+
+        if (bestName == NULL || stats[i]->stepsToFirstSolution < bestSteps) {
+            bestName = names[i];
+            bestSteps = stats[i]->stepsToFirstSolution;
+        }
+    }
+
+    return bestName;
+}
+
+static void printBestSummary(const SearchStats *bfsStats, const SearchStats *dfsIterStats, const SearchStats *dfsRecStats, const SearchStats *dfsPathStats)
+{
+    const char *bestName = bestBySteps(bfsStats, dfsIterStats, dfsRecStats, dfsPathStats);
+
+    printf("=== Сравнение методов по числу шагов до первого решения ===\n");
+    if (bestName != NULL) {
+        printf("Лучший метод: %s\n\n", bestName);
+    } else {
+        printf("Лучший метод: не определен, решений не найдено.\n\n");
+    }
+}
+
+static void printNoSolutionIfNeeded(const char *methodName, int N, int Q, const SearchStats *stats)
+{
+    if (stats->solutionCount == 0) {
+        printf("%s: для N=%d, Q=%d решений не найдено.\n\n", methodName, N, Q);
+    }
+}
 
 int main(void)
 {
-    printf("=== Задача о N ферзях ===\n\n");
+    printf("=== Задача о N ферзях ===\n");
+    printf("Поиск решения в неявном графе пространства состояний\n\n");
 
     int N = readInt("Введите размерность доски N (1..12): ", 1, 12);
     int Q = readInt("Введите число ферзей Q (1..N):       ", 1, N);
 
     printf("\nВыберите метод поиска:\n");
-    printf("1 - BFS\n");
-    printf("2 - DFS\n");
-    printf("3 - BFS и DFS\n\n");
+    printf("1 - Поиск в ширину (BFS)\n");
+    printf("2 - Поиск в глубину, итерационный (DFS)\n");
+    printf("3 - Поиск в глубину, рекурсивный\n");
+    printf("4 - Поиск в глубину, рекурсивный с Path\n");
+    printf("5 - Выполнить все методы и сравнить\n\n");
 
-    int method = readInt("Ваш выбор (1..3): ", 1, 3);
+    int method = readInt("Ваш выбор (1..5): ", 1, 5);
 
-    if (method == 1 || method == 3) {
+    int maxDepth = Q;
+    if (method == METHOD_DFS_ITER || method == METHOD_DFS_REC || method == METHOD_DFS_REC_PATH || method == METHOD_ALL) {
+        printf("\nДля DFS используется ограниченный перебор в глубину.\n");
+        maxDepth = readInt("Введите максимальную глубину просмотра (1..Q): ", 1, Q);
+    }
+
+    SearchStats bfsStats;
+    SearchStats dfsIterStats;
+    SearchStats dfsRecStats;
+    SearchStats dfsPathStats;
+
+    bool hasBFS = false;
+    bool hasDFSIter = false;
+    bool hasDFSRec = false;
+    bool hasDFSPath = false;
+
+    if (method == METHOD_BFS || method == METHOD_ALL) {
         printf("\n--- Поиск в ШИРИНУ (BFS) ---\n");
-        SearchStats bfsStats = solveBFS(N, Q);
-
-        if (bfsStats.solutionCount == 0) {
-            printf("BFS: для N=%d, Q=%d решений не найдено.\n\n", N, Q);
-        }
-
+        bfsStats = solveBFS(N, Q);
+        hasBFS = true;
+        printNoSolutionIfNeeded("BFS", N, Q, &bfsStats);
         printStats("BFS", &bfsStats);
     }
 
-    if (method == 2 || method == 3) {
-        int maxDepth = readInt("Введите максимальную глубину для DFS (1..Q): ", 1, Q);
+    if (method == METHOD_DFS_ITER || method == METHOD_ALL) {
+        printf("\n--- Поиск в ГЛУБИНУ (DFS, итерационный, maxDepth=%d) ---\n", maxDepth);
+        dfsIterStats = solveDFSIterative(N, Q, maxDepth);
+        hasDFSIter = true;
+        printNoSolutionIfNeeded("DFS итерационный", N, Q, &dfsIterStats);
+        printStats("DFS итерационный", &dfsIterStats);
+    }
 
-        printf("\n--- Поиск в ГЛУБИНУ (DFS, ограниченный, maxDepth=%d) ---\n", maxDepth);
-        SearchStats dfsStats = solveDFS(N, Q, maxDepth);
+    if (method == METHOD_DFS_REC || method == METHOD_ALL) {
+        printf("\n--- Поиск в ГЛУБИНУ (DFS, рекурсивный, maxDepth=%d) ---\n", maxDepth);
+        dfsRecStats = solveDFSRecursive(N, Q, maxDepth);
+        hasDFSRec = true;
+        printNoSolutionIfNeeded("DFS рекурсивный", N, Q, &dfsRecStats);
+        printStats("DFS рекурсивный", &dfsRecStats);
+    }
 
-        if (dfsStats.solutionCount == 0) {
-            printf("DFS: для N=%d, Q=%d решений не найдено.\n\n", N, Q);
-        }
+    if (method == METHOD_DFS_REC_PATH || method == METHOD_ALL) {
+        printf("\n--- Поиск в ГЛУБИНУ (DFS, рекурсивный с Path, maxDepth=%d) ---\n", maxDepth);
+        dfsPathStats = solveDFSRecursiveWithPath(N, Q, maxDepth);
+        hasDFSPath = true;
+        printNoSolutionIfNeeded("DFS рекурсивный с Path", N, Q, &dfsPathStats);
+        printStats("DFS рекурсивный с Path", &dfsPathStats);
+    }
 
-        printStats("DFS", &dfsStats);
+    if (method == METHOD_ALL) {
+        printBestSummary(hasBFS ? &bfsStats : NULL, hasDFSIter ? &dfsIterStats : NULL, hasDFSRec ? &dfsRecStats : NULL, hasDFSPath ? &dfsPathStats : NULL);
     }
 
     return 0;
