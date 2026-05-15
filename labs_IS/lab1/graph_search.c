@@ -69,13 +69,14 @@ static int graph_valid_vertex(const Graph *g, int v)
     return v >= FIRST_VERTEX && v <= graph_last_vertex(g);
 }
 
+// IntList
+
 static void list_init(IntList *list)
 {
     list->data     = NULL;
     list->size     = 0;
     list->capacity = 0;
 }
-
 
 static void list_free(IntList *list)
 {
@@ -108,12 +109,20 @@ static int list_push_back(IntList *list, int value)
     return 1;
 }
 
-static int list_pop_back(IntList *list)
+// Копирование списка (нужно для DepthSearch(child, Path+child) по псевдокоду)
+static int list_copy(IntList *dst, const IntList *src)
 {
-    if (list->size == 0)
+    list_free(dst);
+    if (src->size == 0)
+        return 1;
+
+    dst->data = malloc((size_t)src->size * sizeof(int));
+    if (dst->data == NULL)
         return 0;
 
-    list->size--;
+    memcpy(dst->data, src->data, (size_t)src->size * sizeof(int));
+    dst->size     = src->size;
+    dst->capacity = src->size;
     return 1;
 }
 
@@ -156,7 +165,7 @@ static int queue_is_empty(const IntQueue *queue)
     return queue->size == 0;
 }
 
-static int queue_push(IntQueue *queue, int value)
+static int queue_push_back(IntQueue *queue, int value)
 {
     if (queue->size == queue->capacity)
         return 0;
@@ -167,7 +176,7 @@ static int queue_push(IntQueue *queue, int value)
     return 1;
 }
 
-static int queue_pop(IntQueue *queue, int *value)
+static int queue_pop_front(IntQueue *queue, int *value)
 {
     if (queue->size == 0)
         return 0;
@@ -178,7 +187,7 @@ static int queue_pop(IntQueue *queue, int *value)
     return 1;
 }
 
-//Int Stacks
+//Int Stack (Open для DFS итеративного — добавление в начало = push на стек)
 
 static void stack_init(IntStack *stack)
 {
@@ -206,7 +215,7 @@ static int stack_resize(IntStack *stack, int new_capacity)
     return 1;
 }
 
-static int stack_push(IntStack *stack, int value)
+static int stack_push_front(IntStack *stack, int value)
 {
     if (stack->size == stack->capacity) {
         int new_cap = (stack->capacity == 0) ? 4 : stack->capacity * 2;
@@ -218,7 +227,7 @@ static int stack_push(IntStack *stack, int value)
     return 1;
 }
 
-static int stack_pop(IntStack *stack, int *value)
+static int stack_pop_front(IntStack *stack, int *value)
 {
     if (stack->size == 0)
         return 0;
@@ -233,6 +242,7 @@ static int stack_is_empty(const IntStack *stack)
 }
 
 // Graph Methods
+
 static void graph_init_empty(Graph *g)
 {
     g->size = 0;
@@ -422,7 +432,7 @@ SearchResult bfs(const Graph *g, int start, int goal) {
     for (int i = 0; i < storage; i++) parent[i] = -1;
 
     // Open = [Start]; Closed = []
-    if (!queue_push(&open, start)) {
+    if (!queue_push_back(&open, start)) {
         res.status = SEARCH_ERROR;
         goto cleanup;
     }
@@ -431,23 +441,26 @@ SearchResult bfs(const Graph *g, int start, int goal) {
     // While Open <> [] do
     while (!queue_is_empty(&open)) {
         int x;
-        // X = первая вершина из Open; удалить X; добавить в Closed
-        queue_pop(&open, &x);
+        // X = первая вершина из Open; удалить X из Open; добавить X в Closed
+        queue_pop_front(&open, &x);
         in_open[x]   = 0;
         in_closed[x] = 1;
         res.steps++;
 
-        // If X = цель -> вернуть True
-        if (x == goal) {
-            res.status = build_path(start, goal, parent, &res.path) ? SEARCH_FOUND : SEARCH_ERROR;
-            goto cleanup;
-        }
-
-        // Для каждого потомка X:
+        // Для каждого потомка X
         for (int child = FIRST_VERTEX; child <= graph_last_vertex(g); child++) {
-            // Else If потомок не в Open и не в Closed -> добавить в конец Open
-            if (g->adj[x][child] == 1 && !in_open[child] && !in_closed[child]) {
-                if (!queue_push(&open, child)) {
+            if (g->adj[x][child] != 1)
+                continue;
+
+            // If X = цель then вернуть True
+            if (x == goal) {
+                res.status = build_path(start, goal, parent, &res.path)
+                             ? SEARCH_FOUND : SEARCH_ERROR;
+                goto cleanup;
+            }
+            // Else If он (потомок) не в Open или Closed -> добавить в конец Open
+            else if (!in_open[child] && !in_closed[child]) {
+                if (!queue_push_back(&open, child)) {
                     res.status = SEARCH_ERROR;
                     goto cleanup;
                 }
@@ -457,12 +470,17 @@ SearchResult bfs(const Graph *g, int start, int goal) {
         }
     }
 
+    // Вернуть False
 cleanup:
-    queue_free(&open); free(parent); free(in_open); free(in_closed);
+    queue_free(&open);
+    free(parent);
+    free(in_open);
+    free(in_closed);
     return res;
 }
 
-SearchResult dfs_iterative(const Graph *g, int start, int goal) {
+SearchResult dfs_iterative(const Graph *g, int start, int goal)
+{
     SearchResult res;
     IntStack open;
     int *parent    = NULL;
@@ -485,7 +503,7 @@ SearchResult dfs_iterative(const Graph *g, int start, int goal) {
     for (int i = 0; i < storage; i++) parent[i] = -1;
 
     // Open = [Start]; Closed = []
-    if (!stack_push(&open, start)) {
+    if (!stack_push_front(&open, start)) {
         res.status = SEARCH_ERROR;
         goto cleanup;
     }
@@ -494,24 +512,27 @@ SearchResult dfs_iterative(const Graph *g, int start, int goal) {
     // While Open <> [] do
     while (!stack_is_empty(&open)) {
         int x;
-        // X = первая вершина из Open; удалить X; добавить в Closed
-        stack_pop(&open, &x);
+        // X = первая вершина из Open; удалить X из Open; добавить X в Closed
+        stack_pop_front(&open, &x);
         in_open[x]   = 0;
         in_closed[x] = 1;
         res.steps++;
 
-        // If X = цель -> вернуть True
-        if (x == goal) {
-            res.status = build_path(start, goal, parent, &res.path)
-                         ? SEARCH_FOUND : SEARCH_ERROR;
-            goto cleanup;
-        }
-
-        // Для каждого потомка X (обратный порядок → меньший номер идёт первым из стека)
+        // Для каждого потомка X
+        // (обратный порядок обхода — чтобы при добавлении в начало Open потомок с меньшим номером извлекался первым)
         for (int child = graph_last_vertex(g); child >= FIRST_VERTEX; child--) {
-            // Else If потомок не в Open и не в Closed -> добавить в начало Open
-            if (g->adj[x][child] == 1 && !in_open[child] && !in_closed[child]) {
-                if (!stack_push(&open, child)) {
+            if (g->adj[x][child] != 1)
+                continue;
+
+            // If X = цель then вернуть True
+            if (x == goal) {
+                res.status = build_path(start, goal, parent, &res.path)
+                             ? SEARCH_FOUND : SEARCH_ERROR;
+                goto cleanup;
+            }
+            // Else If потомок не в Open или Closed -> добавить в начало Open
+            else if (!in_open[child] && !in_closed[child]) {
+                if (!stack_push_front(&open, child)) {
                     res.status = SEARCH_ERROR;
                     goto cleanup;
                 }
@@ -521,29 +542,38 @@ SearchResult dfs_iterative(const Graph *g, int start, int goal) {
         }
     }
 
+    // Вернуть False
 cleanup:
-    stack_free(&open); free(parent); free(in_open); free(in_closed);
+    stack_free(&open);
+    free(parent);
+    free(in_open);
+    free(in_closed);
     return res;
 }
 
-static int dfs_rec_impl(const Graph *g, int x, int goal,
-                        unsigned char *closed, int *parent, int *steps) {
+static int dfs_rec_impl(const Graph *g, int x, int goal, unsigned char *closed, int *parent, int *steps)
+{
     // Добавить X в Closed
     closed[x] = 1;
     (*steps)++;
 
-    // If X = цель -> вернуть True
-    if (x == goal) return 1;
-
-    // Для каждого child X: Else If child не в Closed -> DepthSearch(child)
+    // Для каждого child (потомка X)
     for (int child = FIRST_VERTEX; child <= graph_last_vertex(g); child++) {
-        if (g->adj[x][child] == 1 && !closed[child]) {
+        if (g->adj[x][child] != 1)
+            continue;
+
+        // If X = цель then вернуть True
+        if (x == goal)
+            return 1;
+        // else If child не в Closed then If DepthSearch(child) = True then вернуть True
+        else if (!closed[child]) {
             parent[child] = x;
             if (dfs_rec_impl(g, child, goal, closed, parent, steps))
                 return 1;
         }
     }
 
+    // Вернуть False
     return 0;
 }
 
@@ -580,25 +610,49 @@ cleanup:
     return res;
 }
 
-static int dfs_rec_path_impl(const Graph *g, int x, int goal, unsigned char *closed, IntList *path, int *steps) {
-    // Поместить X в Closed и добавить в текущий путь Path
+static void print_path(const IntList *path);  // forward declaration
+
+static int dfs_rec_path_impl(const Graph *g, int x, int goal, unsigned char *closed, const IntList *path_in, IntList *path_out, int *steps) {
+    // Добавить X в Closed
     closed[x] = 1;
     (*steps)++;
-    if (!list_push_back(path, x)) return -1;
 
-    // Проверка цели
-    if (x == goal) return 1;
-
-    // Перебор потомков
+    // Для каждого child (потомка X)
     for (int child = FIRST_VERTEX; child <= graph_last_vertex(g); child++) {
-        if (g->adj[x][child] == 1 && !closed[child]) {
-            int result = dfs_rec_path_impl(g, child, goal, closed, path, steps);
-            if (result != 0) return result;
+        if (g->adj[x][child] != 1)
+            continue;
+
+        // If X = цель then распечатать Path и вернуть True
+        if (x == goal) {
+            printf("Найден путь: ");
+            print_path(path_in);
+            if (!list_copy(path_out, path_in))
+                return -1;
+            return 1;
+        }
+        // else If child не в Closed then If DepthSearch(child, Path+child) = True then вернуть True
+        else if (!closed[child]) {
+            // Path+child — новая копия списка (передача по значению)
+            IntList path_next;
+            list_init(&path_next);
+            if (!list_copy(&path_next, path_in)) {
+                list_free(&path_next);
+                return -1;
+            }
+            if (!list_push_back(&path_next, child)) {
+                list_free(&path_next);
+                return -1;
+            }
+
+            int r = dfs_rec_path_impl(g, child, goal, closed, &path_next, path_out, steps);
+            list_free(&path_next);
+
+            if (r != 0)
+                return r;
         }
     }
 
-    // Откат. Если цель не найдена, удалить X из Path
-    list_pop_back(path);
+    // Вернуть False
     return 0;
 }
 
@@ -606,9 +660,11 @@ static SearchResult dfs_recursive_with_path(const Graph *g, int start, int goal)
 {
     SearchResult   res;
     unsigned char *visited = NULL;
+    IntList        path_start;
     int            r;
 
     result_init(&res);
+    list_init(&path_start);
 
     int storage = graph_storage_size(g);
 
@@ -616,15 +672,24 @@ static SearchResult dfs_recursive_with_path(const Graph *g, int start, int goal)
     if (!visited) {
         fprintf(stderr, "Ошибка выделения памяти (DFS rec path)\n");
         res.status = SEARCH_ERROR;
-        return res;
+        goto cleanup;
     }
 
-    r = dfs_rec_path_impl(g, start, goal, visited, &res.path, &res.steps);
+    // Начальный Path = [Start]
+    if (!list_push_back(&path_start, start)) {
+        res.status = SEARCH_ERROR;
+        goto cleanup;
+    }
+
+    r = dfs_rec_path_impl(g, start, goal, visited,
+                          &path_start, &res.path, &res.steps);
     if (r < 0)
         res.status = SEARCH_ERROR;
     else if (r > 0)
         res.status = SEARCH_FOUND;
 
+cleanup:
+    list_free(&path_start);
     free(visited);
     return res;
 }
@@ -768,7 +833,8 @@ int main(int argc, char *argv[])
         return 1;
 
     if (!graph_valid_vertex(&g, start) || !graph_valid_vertex(&g, goal)) {
-        fprintf(stderr, "Вершины вне диапазона %d..%d\n", FIRST_VERTEX, graph_last_vertex(&g));
+        fprintf(stderr, "Вершины вне диапазона %d..%d\n",
+                FIRST_VERTEX, graph_last_vertex(&g));
         graph_free(&g);
         return 1;
     }
