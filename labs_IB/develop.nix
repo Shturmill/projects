@@ -34,8 +34,10 @@ pkgs.mkShell {
       fi
       pg_ctl -D "$PGDATA" -l "$PGDATA/server.log" \
              -o "-p $PGPORT -h $PGHOST -k $PGDATA" start
-      createdb lab3 2> /dev/null
-      psql -d lab3 -f sql/init.sql
+      # имя базы берём из db.properties текущей ветки, а не из момента входа в nix-shell
+      db=$(sed -n 's|^db.url=.*/||p' src/main/resources/db.properties)
+      createdb "$db" 2> /dev/null
+      psql -d "$db" -f sql/init.sql
     }
 
     pg-stop() {
