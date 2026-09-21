@@ -42,6 +42,12 @@ public class Main {
             stop("Ошибка при расшифровании учётных записей:\n" + e.getMessage());
         }
 
+        if (UserStore.getImported() > 0) {
+            JOptionPane.showMessageDialog(null,
+                    "Перенесено учётных записей из ЛР1: " + UserStore.getImported()
+                    + "\nОни зашифрованы, открытая таблица users удалена.");
+        }
+
         // окно входа показывается до главного окна
         LoginDialog login = new LoginDialog(null, true);
         login.setVisible(true);

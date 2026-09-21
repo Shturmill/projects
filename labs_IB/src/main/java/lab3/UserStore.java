@@ -20,6 +20,11 @@ import javax.swing.JOptionPane;
 public class UserStore {
 
     private static SecretKeySpec key;   // сеансовый ключ, null - база ещё не открыта
+    private static int imported;        // сколько записей перенесено из открытой таблицы ЛР1
+
+    public static int getImported() {
+        return imported;
+    }
 
     // таблица с зашифрованными учётными записями (аналог файла)
     public static void createStorage() throws SQLException {
@@ -35,14 +40,19 @@ public class UserStore {
         return readEncrypted() != null;
     }
 
-    // первый запуск: база только с ADMIN (пустой пароль), сразу шифруется
+    // первый запуск: учётные записи из ЛР1 (если есть) или только ADMIN с пустым паролем,
+    // база сразу шифруется
     public static void create(String passphrase) throws Exception {
         key = Crypto.deriveKey(passphrase);
         createTempTable();
-        User admin = new User();
-        admin.setUsername("ADMIN");
-        admin.setPassword("");
-        new UserDao().insert(admin);
+        importPlain();
+        UserDao dao = new UserDao();
+        if (!dao.exists("ADMIN")) {
+            User admin = new User();
+            admin.setUsername("ADMIN");
+            admin.setPassword("");
+            dao.insert(admin);
+        }
         save();
     }
 
@@ -61,7 +71,26 @@ public class UserStore {
         for (User user : users) {
             dao.insert(user);
         }
+        importPlain();
         return true;
+    }
+
+    // перенос открытой таблицы users из ЛР1 (public.users): записи с новыми именами
+    // добавляются, данные шифруются, и только потом открытая таблица удаляется
+    private static void importPlain() throws SQLException {
+        try (Statement st = Db.get().createStatement()) {
+            ResultSet rs = st.executeQuery("SELECT to_regclass('public.users') IS NOT NULL");
+            rs.next();
+            if (!rs.getBoolean(1)) {
+                return;
+            }
+            imported = st.executeUpdate("INSERT INTO pg_temp.users "
+                    + "(username, password, blocked, restrictions_enabled) "
+                    + "SELECT username, password, blocked, restrictions_enabled FROM public.users "
+                    + "WHERE username NOT IN (SELECT username FROM pg_temp.users) ORDER BY id");
+            save();
+            st.executeUpdate("DROP TABLE public.users");
+        }
     }
 
     // зашифровать текущие учётные записи, старое содержимое затирается
