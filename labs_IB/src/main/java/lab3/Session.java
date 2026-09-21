@@ -1,4 +1,4 @@
-package lab1;
+package lab3;
 
 // Кто сейчас работает с программой
 public class Session {

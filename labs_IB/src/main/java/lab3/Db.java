@@ -1,4 +1,4 @@
-package lab1;
+package lab3;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;

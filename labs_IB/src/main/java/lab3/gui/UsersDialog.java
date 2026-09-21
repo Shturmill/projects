@@ -1,10 +1,10 @@
-package lab1.gui;
+package lab3.gui;
 
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
-import lab1.User;
-import lab1.UserDao;
+import lab3.User;
+import lab3.UserDao;
 
 public class UsersDialog extends javax.swing.JDialog {
 

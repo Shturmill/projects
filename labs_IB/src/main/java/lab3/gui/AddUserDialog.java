@@ -1,8 +1,8 @@
-package lab1.gui;
+package lab3.gui;
 
 import javax.swing.JOptionPane;
-import lab1.User;
-import lab1.UserDao;
+import lab3.User;
+import lab3.UserDao;
 
 public class AddUserDialog extends javax.swing.JDialog {
 

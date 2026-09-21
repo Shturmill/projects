@@ -1,16 +1,16 @@
-# Окружение разработки для лабораторной работы №1.
+# Окружение разработки для лабораторной работы №3.
 #
 #   nix-shell develop.nix     - войти в окружение (JDK, Maven, NetBeans, PostgreSQL)
-#   netbeans                  - запустить IDE (File -> Open Project -> папка lab1),
+#   netbeans                  - запустить IDE (File -> Open Project -> папка labs_IB),
 #                               формы открываются на вкладке Design
-#   pg-start                  - поднять локальный PostgreSQL и создать базу lab1
+#   pg-start                  - поднять локальный PostgreSQL и создать базу lab3
 #   pg-stop                   - остановить PostgreSQL
-#   mvn clean package         - собрать target/lab1.jar
+#   mvn clean package         - собрать target/lab3.jar
 #
 { pkgs ? import <nixpkgs> { } }:
 
 pkgs.mkShell {
-  name = "lab1-dev";
+  name = "lab3-dev";
 
   packages = with pkgs; [
     jdk21          # NetBeans 30 требует Java 21+; проект компилируется под 17
@@ -34,15 +34,15 @@ pkgs.mkShell {
       fi
       pg_ctl -D "$PGDATA" -l "$PGDATA/server.log" \
              -o "-p $PGPORT -h $PGHOST -k $PGDATA" start
-      createdb lab1 2> /dev/null
-      psql -d lab1 -f sql/init.sql
+      createdb lab3 2> /dev/null
+      psql -d lab3 -f sql/init.sql
     }
 
     pg-stop() {
       pg_ctl -D "$PGDATA" stop -m fast
     }
 
-    echo "lab1: $(java -version 2>&1 | head -1)"
-    echo "команды: netbeans | pg-start | pg-stop | mvn clean package | java -jar target/lab1.jar"
+    echo "lab3: $(java -version 2>&1 | head -1)"
+    echo "команды: netbeans | pg-start | pg-stop | mvn clean package | java -jar target/lab3.jar"
   '';
 }

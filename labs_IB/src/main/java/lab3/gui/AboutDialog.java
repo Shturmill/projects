@@ -1,4 +1,4 @@
-package lab1.gui;
+package lab3.gui;
 
 public class AboutDialog extends javax.swing.JDialog {
 
@@ -23,7 +23,7 @@ public class AboutDialog extends javax.swing.JDialog {
         txtAbout.setEditable(false);
         txtAbout.setColumns(20);
         txtAbout.setRows(5);
-        txtAbout.setText("Лабораторная работа №1\n«Разработка программы разграничения полномочий пользователей\nна основе парольной аутентификации»\n\nАвтор: Kanteev Sergei, группа IDB-23-08\n\nВариант 10: ограничение на пароль — наличие латинских букв,\nсимволов кириллицы и цифр.");
+        txtAbout.setText("Лабораторная работа №3\n«Использование функций криптографического интерфейса Windows\nдля защиты информации»\n\nАвтор: Kanteev Sergei, группа IDB-23-08\n\nВариант 10: потоковый шифр RC4, без добавления к ключу\nслучайного значения, хеширование MD5.\nОграничение на пароль: латинские буквы, кириллица и цифры.");
         txtAbout.setOpaque(false);
 
         btnClose.setText("Закрыть");

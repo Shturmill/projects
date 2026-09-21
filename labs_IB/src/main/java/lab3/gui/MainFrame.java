@@ -1,7 +1,7 @@
-package lab1.gui;
+package lab3.gui;
 
-import lab1.Db;
-import lab1.Session;
+import lab3.Main;
+import lab3.Session;
 
 public class MainFrame extends javax.swing.JFrame {
 
@@ -42,7 +42,7 @@ public class MainFrame extends javax.swing.JFrame {
         mniAbout = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Лабораторная работа №1");
+        setTitle("Лабораторная работа №3");
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
                 formWindowClosing(evt);
@@ -218,8 +218,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private void exit() {
-        Db.close();
-        System.exit(0);
+        Main.exit();
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

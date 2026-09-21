@@ -53,7 +53,7 @@
         <Property name="editable" type="boolean" value="false"/>
         <Property name="columns" type="int" value="20"/>
         <Property name="rows" type="int" value="5"/>
-        <Property name="text" type="java.lang.String" value="Лабораторная работа №1&#xa;«Разработка программы разграничения полномочий пользователей&#xa;на основе парольной аутентификации»&#xa;&#xa;Автор: Kanteev Sergei, группа IDB-23-08&#xa;&#xa;Вариант 10: ограничение на пароль — наличие латинских букв,&#xa;символов кириллицы и цифр."/>
+        <Property name="text" type="java.lang.String" value="Лабораторная работа №3&#xa;«Использование функций криптографического интерфейса Windows&#xa;для защиты информации»&#xa;&#xa;Автор: Kanteev Sergei, группа IDB-23-08&#xa;&#xa;Вариант 10: потоковый шифр RC4, без добавления к ключу&#xa;случайного значения, хеширование MD5.&#xa;Ограничение на пароль: латинские буквы, кириллица и цифры."/>
         <Property name="opaque" type="boolean" value="false"/>
       </Properties>
     </Component>

@@ -1,17 +1,11 @@
--- Лабораторная работа №1, вариант 10
+-- Лабораторная работа №3, вариант 10
 -- Ручная подготовка базы данных.
--- Создание базы (выполнять отдельно, вне базы lab1):
--- CREATE DATABASE lab1;
+-- Создание базы (выполнять отдельно, вне базы lab3):
+-- CREATE DATABASE lab3;
 
-CREATE TABLE IF NOT EXISTS users (
-    id                   SERIAL PRIMARY KEY,
-    username             VARCHAR(50) NOT NULL UNIQUE,
-    password             VARCHAR(100) NOT NULL DEFAULT '',
-    blocked              BOOLEAN NOT NULL DEFAULT FALSE,
-    restrictions_enabled BOOLEAN NOT NULL DEFAULT FALSE
+-- учётные записи хранятся только в зашифрованном виде (RC4, ключ из MD5 парольной фразы);
+-- саму запись создаёт программа при первом запуске после ввода парольной фразы
+CREATE TABLE IF NOT EXISTS users_encrypted (
+    id   INTEGER PRIMARY KEY,
+    data BYTEA NOT NULL
 );
-
--- суперпользователь ADMIN с пустым паролем
-INSERT INTO users (username, password)
-SELECT 'ADMIN', ''
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'ADMIN');

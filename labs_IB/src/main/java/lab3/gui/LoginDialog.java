@@ -1,9 +1,9 @@
-package lab1.gui;
+package lab3.gui;
 
 import javax.swing.JOptionPane;
-import lab1.Db;
-import lab1.User;
-import lab1.UserDao;
+import lab3.Main;
+import lab3.User;
+import lab3.UserDao;
 
 public class LoginDialog extends javax.swing.JDialog {
 
@@ -124,8 +124,7 @@ public class LoginDialog extends javax.swing.JDialog {
             if (attempts >= 3) {
                 JOptionPane.showMessageDialog(this,
                         "Неверный пароль. Попытки исчерпаны, программа будет закрыта.");
-                Db.close();
-                System.exit(0);
+                Main.exit();
             }
             JOptionPane.showMessageDialog(this, "Неверный пароль");
             return;
@@ -137,8 +136,7 @@ public class LoginDialog extends javax.swing.JDialog {
             if (!dialog.isChanged()) {
                 JOptionPane.showMessageDialog(this,
                         "При первом входе необходимо задать пароль. Программа будет закрыта.");
-                Db.close();
-                System.exit(0);
+                Main.exit();
             }
         }
 
@@ -147,8 +145,7 @@ public class LoginDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_btnOkActionPerformed
 
     private void btnExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExitActionPerformed
-        Db.close();
-        System.exit(0);
+        Main.exit();
     }//GEN-LAST:event_btnExitActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -1,4 +1,4 @@
-package lab1;
+package lab3;
 
 // Вариант 10: наличие латинских букв, символов кириллицы и цифр
 public class PasswordValidator {
