@@ -1,82 +1,76 @@
 package lab3;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 
-// Все запросы к таблице users
+// Работа с временным файлом учётных записей
+// (строки вида имя;пароль;блокировка;ограничения)
 public class UserDao {
 
     // найти пользователя по имени, null - если такого нет
     public User findByName(String name) {
-        String sql = "SELECT id, username, password, blocked, restrictions_enabled FROM users WHERE username = ?";
-        try (PreparedStatement ps = Db.get().prepareStatement(sql)) {
-            ps.setString(1, name);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return read(rs);
+        for (User user : findAll()) {
+            if (user.getUsername().equals(name)) {
+                return user;
             }
-        } catch (SQLException e) {
-            error(e);
         }
         return null;
     }
 
     // все пользователи, ADMIN первым
     public List<User> findAll() {
-        List<User> list = new ArrayList<>();
-        String sql = "SELECT id, username, password, blocked, restrictions_enabled FROM users ORDER BY id";
-        try (PreparedStatement ps = Db.get().prepareStatement(sql)) {
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(read(rs));
+        List<User> users = new ArrayList<>();
+        try {
+            for (String line : Files.readAllLines(UserStore.getTempFile().toPath(), StandardCharsets.UTF_8)) {
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+                String[] parts = line.split(";", -1);
+                User user = new User();
+                user.setUsername(parts[0]);
+                user.setPassword(parts[1]);
+                user.setBlocked(Boolean.parseBoolean(parts[2]));
+                user.setRestrictionsEnabled(Boolean.parseBoolean(parts[3]));
+                users.add(user);
             }
-        } catch (SQLException e) {
+        } catch (IOException e) {
             error(e);
         }
-        return list;
+        return users;
     }
 
     // добавить нового пользователя
     public void insert(User user) {
-        String sql = "INSERT INTO users (username, password, blocked, restrictions_enabled) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement ps = Db.get().prepareStatement(sql)) {
-            ps.setString(1, user.getUsername());
-            ps.setString(2, user.getPassword());
-            ps.setBoolean(3, user.isBlocked());
-            ps.setBoolean(4, user.isRestrictionsEnabled());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            error(e);
-        }
+        List<User> users = findAll();
+        users.add(user);
+        writeAll(users);
     }
 
     // сменить пароль
     public void updatePassword(String name, String newPassword) {
-        String sql = "UPDATE users SET password = ? WHERE username = ?";
-        try (PreparedStatement ps = Db.get().prepareStatement(sql)) {
-            ps.setString(1, newPassword);
-            ps.setString(2, name);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            error(e);
+        List<User> users = findAll();
+        for (User user : users) {
+            if (user.getUsername().equals(name)) {
+                user.setPassword(newPassword);
+            }
         }
+        writeAll(users);
     }
 
     // блокировка и ограничения на пароль
     public void updateFlags(User user) {
-        String sql = "UPDATE users SET blocked = ?, restrictions_enabled = ? WHERE username = ?";
-        try (PreparedStatement ps = Db.get().prepareStatement(sql)) {
-            ps.setBoolean(1, user.isBlocked());
-            ps.setBoolean(2, user.isRestrictionsEnabled());
-            ps.setString(3, user.getUsername());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            error(e);
+        List<User> users = findAll();
+        for (User u : users) {
+            if (u.getUsername().equals(user.getUsername())) {
+                u.setBlocked(user.isBlocked());
+                u.setRestrictionsEnabled(user.isRestrictionsEnabled());
+            }
         }
+        writeAll(users);
     }
 
     // есть ли уже такое имя
@@ -84,22 +78,27 @@ public class UserDao {
         return findByName(name) != null;
     }
 
-    // прочитать одну строку результата
-    private User read(ResultSet rs) throws SQLException {
-        User user = new User();
-        user.setId(rs.getInt("id"));
-        user.setUsername(rs.getString("username"));
-        user.setPassword(rs.getString("password"));
-        user.setBlocked(rs.getBoolean("blocked"));
-        user.setRestrictionsEnabled(rs.getBoolean("restrictions_enabled"));
-        return user;
+    // записать всех пользователей во временный файл
+    private void writeAll(List<User> users) {
+        StringBuilder text = new StringBuilder();
+        for (User user : users) {
+            text.append(user.getUsername()).append(';')
+                    .append(user.getPassword()).append(';')
+                    .append(user.isBlocked()).append(';')
+                    .append(user.isRestrictionsEnabled()).append('\n');
+        }
+        try {
+            Files.write(UserStore.getTempFile().toPath(), text.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            error(e);
+        }
     }
 
-    // сообщение об ошибке БД
-    private void error(SQLException e) {
+    // сообщение об ошибке работы с файлом
+    private void error(IOException e) {
         e.printStackTrace();
         JOptionPane.showMessageDialog(null,
-                "Ошибка базы данных:\n" + e.getMessage(),
+                "Ошибка при работе с файлом учётных записей:\n" + e.getMessage(),
                 "Ошибка", JOptionPane.ERROR_MESSAGE);
     }
 }

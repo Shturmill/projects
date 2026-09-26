@@ -15,7 +15,6 @@ public class Main {
 
         // расшифровываем учётные записи (при первом запуске - создаём)
         try {
-            UserStore.createStorage();
             if (UserStore.exists()) {
                 String passphrase = askPassphrase("Расшифрование базы данных",
                         "Пароль для расшифрования базы учётных записей:");
@@ -45,7 +44,7 @@ public class Main {
         if (UserStore.getImported() > 0) {
             JOptionPane.showMessageDialog(null,
                     "Перенесено учётных записей из ЛР1: " + UserStore.getImported()
-                    + "\nОни зашифрованы, открытая таблица users удалена.");
+                    + "\nОни зашифрованы, файл users_import.csv удалён.");
         }
 
         // окно входа показывается до главного окна
@@ -60,10 +59,9 @@ public class Main {
         new MainFrame().setVisible(true);
     }
 
-    // завершение работы: учётные записи снова шифруются, временная таблица удаляется
+    // завершение работы: учётные записи снова шифруются, временный файл удаляется
     public static void exit() {
         UserStore.close();
-        Db.close();
         System.exit(0);
     }
 
@@ -79,7 +77,6 @@ public class Main {
     // сообщение и выход без сохранения
     private static void stop(String message) {
         JOptionPane.showMessageDialog(null, message, "Лабораторная работа №3", JOptionPane.WARNING_MESSAGE);
-        Db.close();
         System.exit(0);
     }
 

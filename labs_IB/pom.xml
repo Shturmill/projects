@@ -16,15 +16,6 @@
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
-    <dependencies>
-        <!-- JDBC-драйвер PostgreSQL -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.7.3</version>
-        </dependency>
-    </dependencies>
-
     <build>
         <finalName>lab3</finalName>
         <plugins>

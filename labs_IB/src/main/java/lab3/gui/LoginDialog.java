@@ -2,6 +2,7 @@ package lab3.gui;
 
 import javax.swing.JOptionPane;
 import lab3.Main;
+import lab3.PasswordValidator;
 import lab3.User;
 import lab3.UserDao;
 
@@ -130,12 +131,12 @@ public class LoginDialog extends javax.swing.JDialog {
             return;
         }
 
-        if (found.getPassword().isEmpty()) {
+        if (found.isRestrictionsEnabled() && PasswordValidator.check(found.getPassword()) != null) {
             ChangePasswordDialog dialog = new ChangePasswordDialog(null, true, found, true);
             dialog.setVisible(true);
             if (!dialog.isChanged()) {
                 JOptionPane.showMessageDialog(this,
-                        "При первом входе необходимо задать пароль. Программа будет закрыта.");
+                        "Необходимо задать пароль, соответствующий ограничениям. Программа будет закрыта.");
                 Main.exit();
             }
         }

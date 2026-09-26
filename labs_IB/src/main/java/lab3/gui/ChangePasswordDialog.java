@@ -23,7 +23,7 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         txtNew.setEchoChar('*');
         txtConfirm.setEchoChar('*');
         if (firstLogin) {
-            setTitle("Установка пароля при первом входе");
+            setTitle(user.getPassword().isEmpty() ? "Установка пароля при первом входе" : "Пароль не соответствует ограничениям");
             txtOld.setEnabled(false);
         }
     }
@@ -134,6 +134,11 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
 
         if (newPassword.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Пароль не может быть пустым");
+            return;
+        }
+
+        if (newPassword.contains(";")) {
+            JOptionPane.showMessageDialog(this, "Пароль не должен содержать символ ;");
             return;
         }
 

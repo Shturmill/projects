@@ -98,6 +98,11 @@ public class AddUserDialog extends javax.swing.JDialog {
             return;
         }
 
+        if (name.contains(";")) {
+            JOptionPane.showMessageDialog(this, "Имя не должно содержать символ ;");
+            return;
+        }
+
         if (dao.exists(name)) {
             JOptionPane.showMessageDialog(this, "Пользователь с таким именем уже существует");
             return;

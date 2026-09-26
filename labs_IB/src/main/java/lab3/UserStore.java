@@ -1,50 +1,41 @@
 package lab3;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JOptionPane;
 
-// Учётные записи хранятся в БД только в зашифрованном виде (таблица users_encrypted).
-// На время работы они расшифровываются во временную таблицу users,
-// которую PostgreSQL удаляет сам при закрытии соединения.
 public class UserStore {
 
-    private static SecretKeySpec key;   // сеансовый ключ, null - база ещё не открыта
-    private static int imported;        // сколько записей перенесено из открытой таблицы ЛР1
+    private static final File FILE = new File("users.txt");
+    private static final File TEMP = new File("users_temp.csv");
+    private static final File IMPORT = new File("users_import.csv");
+
+    private static SecretKeySpec key; // сеансовый ключ, null - файл ещё не открыт
+    private static int imported; // сколько записей перенесено из выгрузки ЛР1
+
+    public static File getTempFile() {
+        return TEMP;
+    }
 
     public static int getImported() {
         return imported;
     }
 
-    // таблица с зашифрованными учётными записями (аналог файла)
-    public static void createStorage() throws SQLException {
-        try (Statement st = Db.get().createStatement()) {
-            st.executeUpdate("CREATE TABLE IF NOT EXISTS users_encrypted ("
-                    + "id INTEGER PRIMARY KEY, "
-                    + "data BYTEA NOT NULL)");
-        }
+    // есть ли уже зашифрованный файл
+    public static boolean exists() {
+        return FILE.exists();
     }
 
-    // есть ли уже зашифрованные учётные записи
-    public static boolean exists() throws SQLException {
-        return readEncrypted() != null;
-    }
-
-    // первый запуск: учётные записи из ЛР1 (если есть) или только ADMIN с пустым паролем,
-    // база сразу шифруется
+    // первый запуск: учётные записи из выгрузки ЛР1 (если есть) или только ADMIN
+    // с пустым паролем, файл сразу шифруется
     public static void create(String passphrase) throws Exception {
         key = Crypto.deriveKey(passphrase);
-        createTempTable();
+        writeTemp("");
         importPlain();
         UserDao dao = new UserDao();
         if (!dao.exists("ADMIN")) {
@@ -56,135 +47,134 @@ public class UserStore {
         save();
     }
 
-    // расшифровать учётные записи во временную таблицу,
-    // false - парольная фраза неверная (нет учётной записи ADMIN)
+    // расшифровать файл во временный, false - парольная фраза неверная
+    // или файл изменён (нет учётной записи ADMIN, испорчены строки)
     public static boolean open(String passphrase) throws Exception {
         SecretKeySpec newKey = Crypto.deriveKey(passphrase);
-        List<User> users = parse(Crypto.decrypt(readEncrypted(), newKey));
-        if (users == null || !hasAdmin(users)) {
+        String text;
+        try {
+            byte[] data = Base64.getMimeDecoder().decode(
+                Files.readAllBytes(FILE.toPath())
+            );
+            text = new String(
+                Crypto.decrypt(data, newKey),
+                StandardCharsets.UTF_8
+            );
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+
+        if (!hasAdmin(text)) {
             return false;
         }
 
         key = newKey;
-        createTempTable();
-        UserDao dao = new UserDao();
-        for (User user : users) {
-            dao.insert(user);
-        }
+        writeTemp(text);
         importPlain();
         return true;
     }
 
-    // перенос открытой таблицы users из ЛР1 (public.users): записи с новыми именами
-    // добавляются, данные шифруются, и только потом открытая таблица удаляется
-    private static void importPlain() throws SQLException {
-        try (Statement st = Db.get().createStatement()) {
-            ResultSet rs = st.executeQuery("SELECT to_regclass('public.users') IS NOT NULL");
-            rs.next();
-            if (!rs.getBoolean(1)) {
-                return;
-            }
-            imported = st.executeUpdate("INSERT INTO pg_temp.users "
-                    + "(username, password, blocked, restrictions_enabled) "
-                    + "SELECT username, password, blocked, restrictions_enabled FROM public.users "
-                    + "WHERE username NOT IN (SELECT username FROM pg_temp.users) ORDER BY id");
-            save();
-            st.executeUpdate("DROP TABLE public.users");
-        }
-    }
-
-    // зашифровать текущие учётные записи, старое содержимое затирается
+    // зашифровать временный файл, старое содержимое users.txt затирается
     public static void save() {
         if (key == null) {
             return;
         }
-        String sql = "INSERT INTO users_encrypted (id, data) VALUES (1, ?) "
-                + "ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data";
-        try (PreparedStatement ps = Db.get().prepareStatement(sql)) {
-            ps.setBytes(1, Crypto.encrypt(serialize(new UserDao().findAll()), key));
-            ps.executeUpdate();
+        try {
+            byte[] data = Crypto.encrypt(
+                Files.readAllBytes(TEMP.toPath()),
+                key
+            );
+            Files.write(FILE.toPath(), Base64.getMimeEncoder().encode(data));
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null,
-                    "Не удалось зашифровать учётные записи:\n" + e.getMessage(),
-                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(
+                null,
+                "Не удалось зашифровать учётные записи:\n" + e.getMessage(),
+                "Ошибка",
+                JOptionPane.ERROR_MESSAGE
+            );
         }
     }
 
-    // при выходе: зашифровать и удалить временную таблицу
+    // при выходе: зашифровать и удалить временный файл
     public static void close() {
         if (key == null) {
             return;
         }
         save();
-        try (Statement st = Db.get().createStatement()) {
-            st.executeUpdate("DROP TABLE IF EXISTS pg_temp.users");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        TEMP.delete();
         key = null;
     }
 
-    private static void createTempTable() throws SQLException {
-        try (Statement st = Db.get().createStatement()) {
-            st.executeUpdate("CREATE TEMPORARY TABLE users ("
-                    + "id SERIAL PRIMARY KEY, "
-                    + "username VARCHAR(50) NOT NULL UNIQUE, "
-                    + "password VARCHAR(100) NOT NULL DEFAULT '', "
-                    + "blocked BOOLEAN NOT NULL DEFAULT FALSE, "
-                    + "restrictions_enabled BOOLEAN NOT NULL DEFAULT FALSE)");
+    // перенос выгрузки из ЛР1 (users_import.csv): записи с новыми именами добавляются,
+    // данные шифруются, и только потом выгрузка удаляется
+    private static void importPlain() throws Exception {
+        if (!IMPORT.exists()) {
+            return;
         }
-    }
 
-    private static byte[] readEncrypted() throws SQLException {
-        try (Statement st = Db.get().createStatement()) {
-            ResultSet rs = st.executeQuery("SELECT data FROM users_encrypted WHERE id = 1");
-            if (rs.next()) {
-                return rs.getBytes("data");
+        List<User> list = parse(
+            new String(
+                Files.readAllBytes(IMPORT.toPath()),
+                StandardCharsets.UTF_8
+            )
+        );
+        if (list == null) {
+            JOptionPane.showMessageDialog(
+                null,
+                "Файл " +
+                    IMPORT.getName() +
+                    " имеет неверный формат, перенос не выполнен.",
+                "Ошибка",
+                JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        UserDao dao = new UserDao();
+        imported = 0;
+        for (User user : list) {
+            if (!dao.exists(user.getUsername())) {
+                dao.insert(user);
+                imported++;
             }
         }
-        return null;
+        save();
+        IMPORT.delete();
     }
 
-    // записи: количество, затем имя, пароль, блокировка, ограничения
-    private static byte[] serialize(List<User> users) throws IOException {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        DataOutputStream out = new DataOutputStream(bytes);
-        out.writeInt(users.size());
-        for (User user : users) {
-            out.writeUTF(user.getUsername());
-            out.writeUTF(user.getPassword());
-            out.writeBoolean(user.isBlocked());
-            out.writeBoolean(user.isRestrictionsEnabled());
-        }
-        out.flush();
-        return bytes.toByteArray();
+    private static void writeTemp(String text) throws Exception {
+        Files.write(TEMP.toPath(), text.getBytes(StandardCharsets.UTF_8));
     }
 
-    // null - данные не читаются (расшифрованы неверным ключом)
-    private static List<User> parse(byte[] data) {
-        try {
-            DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
-            int count = in.readInt();
-            if (count < 0 || count > data.length) {
+    // строки вида имя;пароль;блокировка;ограничения
+    private static List<User> parse(String text) {
+        List<User> users = new ArrayList<>();
+        for (String line : text.split("\n")) {
+            line = line.trim();
+            if (line.isEmpty()) {
+                continue;
+            }
+            String[] parts = line.split(";", -1);
+            if (parts.length != 4) {
                 return null;
             }
-            List<User> users = new ArrayList<>();
-            for (int i = 0; i < count; i++) {
-                User user = new User();
-                user.setUsername(in.readUTF());
-                user.setPassword(in.readUTF());
-                user.setBlocked(in.readBoolean());
-                user.setRestrictionsEnabled(in.readBoolean());
-                users.add(user);
-            }
-            return users;
-        } catch (IOException e) {
-            return null;
+            User user = new User();
+            user.setUsername(parts[0]);
+            user.setPassword(parts[1]);
+            user.setBlocked(Boolean.parseBoolean(parts[2]));
+            user.setRestrictionsEnabled(Boolean.parseBoolean(parts[3]));
+            users.add(user);
         }
+        return users;
     }
 
-    private static boolean hasAdmin(List<User> users) {
+    // правильность парольной фразы определяется по наличию учётной записи ADMIN
+    private static boolean hasAdmin(String text) {
+        List<User> users = parse(text);
+        if (users == null) {
+            return false;
+        }
         for (User user : users) {
             if ("ADMIN".equals(user.getUsername())) {
                 return true;

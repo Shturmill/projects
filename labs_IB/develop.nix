@@ -1,11 +1,14 @@
 # Окружение разработки для лабораторной работы №3.
 #
-#   nix-shell develop.nix     - войти в окружение (JDK, Maven, NetBeans, PostgreSQL)
+#   nix-shell develop.nix     - войти в окружение (JDK, Maven, NetBeans)
 #   netbeans                  - запустить IDE (File -> Open Project -> папка labs_IB),
 #                               формы открываются на вкладке Design
-#   pg-start                  - поднять локальный PostgreSQL и создать базу lab3
-#   pg-stop                   - остановить PostgreSQL
 #   mvn clean package         - собрать target/lab3.jar
+#   java -jar target/lab3.jar - запустить программу
+#
+# Учётные записи хранятся в файлах рядом с программой:
+#   users.txt      - зашифрованные учётные записи
+#   users_temp.csv - расшифрованные, существует только во время работы программы
 #
 { pkgs ? import <nixpkgs> { } }:
 
@@ -16,35 +19,12 @@ pkgs.mkShell {
     jdk21          # NetBeans 30 требует Java 21+; проект компилируется под 17
     maven
     netbeans       # NetBeans с GUI Builder (файлы *.form)
-    postgresql_16  # сервер и psql для локальной базы
   ];
 
   JAVA_HOME = "${pkgs.jdk21}";
 
   shellHook = ''
-    # локальная база лежит в ./.pgdata, порт 5432, пользователь postgres без пароля
-    export PGDATA="$PWD/.pgdata"
-    export PGHOST=127.0.0.1
-    export PGPORT=5432
-    export PGUSER=postgres
-
-    pg-start() {
-      if [ ! -d "$PGDATA" ]; then
-        initdb -U postgres --auth=trust -E UTF8 > /dev/null
-      fi
-      pg_ctl -D "$PGDATA" -l "$PGDATA/server.log" \
-             -o "-p $PGPORT -h $PGHOST -k $PGDATA" start
-      # имя базы берём из db.properties текущей ветки, а не из момента входа в nix-shell
-      db=$(sed -n 's|^db.url=.*/||p' src/main/resources/db.properties)
-      createdb "$db" 2> /dev/null
-      psql -d "$db" -f sql/init.sql
-    }
-
-    pg-stop() {
-      pg_ctl -D "$PGDATA" stop -m fast
-    }
-
     echo "lab3: $(java -version 2>&1 | head -1)"
-    echo "команды: netbeans | pg-start | pg-stop | mvn clean package | java -jar target/lab3.jar"
+    echo "команды: netbeans | mvn clean package | java -jar target/lab3.jar"
   '';
 }
