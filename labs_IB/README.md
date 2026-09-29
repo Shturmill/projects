@@ -12,7 +12,7 @@ a 128-bit key and `Cipher("ARCFOUR")` encrypts the data.
 
 | File | Contents |
 |---|---|
-| `users.txt` | the accounts, encrypted and written as Base64 text, so the file opens and edits in any text editor |
+| `users.dat` | the accounts, encrypted with RC4: raw bytes, so a hex editor shows unreadable data |
 | `users_temp.csv` | decrypted records `name;password;blocked;restrictions`, exists only while the program runs |
 | `users_import.csv` | optional export from lab 1: new names are imported from it and the file is deleted |
 
@@ -30,7 +30,7 @@ NetBeans: run `netbeans`, then File → Open Project → the `labs_IB` folder. F
 
 ## How it works
 
-1. On the first run the program asks for a passphrase twice and creates `users.txt` holding a single
+1. On the first run the program asks for a passphrase twice and creates `users.dat` holding a single
    `ADMIN` account with an empty password.
 2. On later runs it asks for the passphrase, decrypts the data into the temporary file and looks for
    the `ADMIN` record. If it is missing, the passphrase is wrong: the program reports it and exits

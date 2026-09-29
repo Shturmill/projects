@@ -4,14 +4,13 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JOptionPane;
 
 public class UserStore {
 
-    private static final File FILE = new File("users.txt");
+    private static final File FILE = new File("users.dat");
     private static final File TEMP = new File("users_temp.csv");
     private static final File IMPORT = new File("users_import.csv");
 
@@ -51,18 +50,8 @@ public class UserStore {
     // или файл изменён (нет учётной записи ADMIN, испорчены строки)
     public static boolean open(String passphrase) throws Exception {
         SecretKeySpec newKey = Crypto.deriveKey(passphrase);
-        String text;
-        try {
-            byte[] data = Base64.getMimeDecoder().decode(
-                Files.readAllBytes(FILE.toPath())
-            );
-            text = new String(
-                Crypto.decrypt(data, newKey),
-                StandardCharsets.UTF_8
-            );
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
+        byte[] data = Crypto.decrypt(Files.readAllBytes(FILE.toPath()), newKey);
+        String text = new String(data, StandardCharsets.UTF_8);
 
         if (!hasAdmin(text)) {
             return false;
@@ -74,7 +63,7 @@ public class UserStore {
         return true;
     }
 
-    // зашифровать временный файл, старое содержимое users.txt затирается
+    // зашифровать временный файл, старое содержимое users.dat затирается
     public static void save() {
         if (key == null) {
             return;
@@ -84,7 +73,7 @@ public class UserStore {
                 Files.readAllBytes(TEMP.toPath()),
                 key
             );
-            Files.write(FILE.toPath(), Base64.getMimeEncoder().encode(data));
+            Files.write(FILE.toPath(), data);
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(

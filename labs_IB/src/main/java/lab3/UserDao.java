@@ -25,7 +25,10 @@ public class UserDao {
     public List<User> findAll() {
         List<User> users = new ArrayList<>();
         try {
-            for (String line : Files.readAllLines(UserStore.getTempFile().toPath(), StandardCharsets.UTF_8)) {
+            for (String line : Files.readAllLines(
+                UserStore.getTempFile().toPath(),
+                StandardCharsets.UTF_8
+            )) {
                 if (line.trim().isEmpty()) {
                     continue;
                 }
@@ -82,13 +85,20 @@ public class UserDao {
     private void writeAll(List<User> users) {
         StringBuilder text = new StringBuilder();
         for (User user : users) {
-            text.append(user.getUsername()).append(';')
-                    .append(user.getPassword()).append(';')
-                    .append(user.isBlocked()).append(';')
-                    .append(user.isRestrictionsEnabled()).append('\n');
+            text.append(user.getUsername())
+                .append(';')
+                .append(user.getPassword())
+                .append(';')
+                .append(user.isBlocked())
+                .append(';')
+                .append(user.isRestrictionsEnabled())
+                .append('\n');
         }
         try {
-            Files.write(UserStore.getTempFile().toPath(), text.toString().getBytes(StandardCharsets.UTF_8));
+            Files.write(
+                UserStore.getTempFile().toPath(),
+                text.toString().getBytes(StandardCharsets.UTF_8)
+            );
         } catch (IOException e) {
             error(e);
         }
@@ -97,8 +107,11 @@ public class UserDao {
     // сообщение об ошибке работы с файлом
     private void error(IOException e) {
         e.printStackTrace();
-        JOptionPane.showMessageDialog(null,
-                "Ошибка при работе с файлом учётных записей:\n" + e.getMessage(),
-                "Ошибка", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(
+            null,
+            "Ошибка при работе с файлом учётных записей:\n" + e.getMessage(),
+            "Ошибка",
+            JOptionPane.ERROR_MESSAGE
+        );
     }
 }

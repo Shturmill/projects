@@ -12,7 +12,12 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
     private boolean firstLogin;
     private boolean changed;
 
-    public ChangePasswordDialog(java.awt.Frame parent, boolean modal, User user, boolean firstLogin) {
+    public ChangePasswordDialog(
+        java.awt.Frame parent,
+        boolean modal,
+        User user,
+        boolean firstLogin
+    ) {
         super(parent, modal);
         this.user = user;
         this.firstLogin = firstLogin;
@@ -23,7 +28,11 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         txtNew.setEchoChar('*');
         txtConfirm.setEchoChar('*');
         if (firstLogin) {
-            setTitle(user.getPassword().isEmpty() ? "Установка пароля при первом входе" : "Пароль не соответствует ограничениям");
+            setTitle(
+                user.getPassword().isEmpty()
+                    ? "Установка пароля при первом входе"
+                    : "Пароль не соответствует ограничениям"
+            );
             txtOld.setEnabled(false);
         }
     }
@@ -35,7 +44,6 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
@@ -56,68 +64,165 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         jLabel3.setText("Подтверждение:");
 
         btnOk.setText("OK");
-        btnOk.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnOkActionPerformed(evt);
+        btnOk.addActionListener(
+            new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    btnOkActionPerformed(evt);
+                }
             }
-        });
+        );
 
         btnCancel.setText("Отмена");
-        btnCancel.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnCancelActionPerformed(evt);
+        btnCancel.addActionListener(
+            new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    btnCancelActionPerformed(evt);
+                }
             }
-        });
+        );
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(
+            getContentPane()
+        );
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel1)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel3))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txtOld, javax.swing.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE)
-                            .addComponent(txtNew, javax.swing.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE)
-                            .addComponent(txtConfirm, javax.swing.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE)))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(btnOk)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(btnCancel)))
-                .addContainerGap())
+            layout
+                .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(
+                    layout
+                        .createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(
+                            layout
+                                .createParallelGroup(
+                                    javax.swing.GroupLayout.Alignment.LEADING
+                                )
+                                .addGroup(
+                                    layout
+                                        .createSequentialGroup()
+                                        .addGroup(
+                                            layout
+                                                .createParallelGroup(
+                                                    javax.swing.GroupLayout.Alignment.TRAILING
+                                                )
+                                                .addComponent(jLabel1)
+                                                .addComponent(jLabel2)
+                                                .addComponent(jLabel3)
+                                        )
+                                        .addPreferredGap(
+                                            javax.swing.LayoutStyle.ComponentPlacement.RELATED
+                                        )
+                                        .addGroup(
+                                            layout
+                                                .createParallelGroup(
+                                                    javax.swing.GroupLayout.Alignment.LEADING
+                                                )
+                                                .addComponent(
+                                                    txtOld,
+                                                    javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                    250,
+                                                    Short.MAX_VALUE
+                                                )
+                                                .addComponent(
+                                                    txtNew,
+                                                    javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                    250,
+                                                    Short.MAX_VALUE
+                                                )
+                                                .addComponent(
+                                                    txtConfirm,
+                                                    javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                    250,
+                                                    Short.MAX_VALUE
+                                                )
+                                        )
+                                )
+                                .addGroup(
+                                    javax.swing.GroupLayout.Alignment.TRAILING,
+                                    layout
+                                        .createSequentialGroup()
+                                        .addComponent(btnOk)
+                                        .addPreferredGap(
+                                            javax.swing.LayoutStyle.ComponentPlacement.UNRELATED
+                                        )
+                                        .addComponent(btnCancel)
+                                )
+                        )
+                        .addContainerGap()
+                )
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(txtOld, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel2)
-                    .addComponent(txtNew, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
-                    .addComponent(txtConfirm, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnOk)
-                    .addComponent(btnCancel))
-                .addContainerGap(20, Short.MAX_VALUE))
+            layout
+                .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(
+                    layout
+                        .createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(
+                            layout
+                                .createParallelGroup(
+                                    javax.swing.GroupLayout.Alignment.BASELINE
+                                )
+                                .addComponent(jLabel1)
+                                .addComponent(
+                                    txtOld,
+                                    javax.swing.GroupLayout.PREFERRED_SIZE,
+                                    javax.swing.GroupLayout.DEFAULT_SIZE,
+                                    javax.swing.GroupLayout.PREFERRED_SIZE
+                                )
+                        )
+                        .addPreferredGap(
+                            javax.swing.LayoutStyle.ComponentPlacement.RELATED
+                        )
+                        .addGroup(
+                            layout
+                                .createParallelGroup(
+                                    javax.swing.GroupLayout.Alignment.BASELINE
+                                )
+                                .addComponent(jLabel2)
+                                .addComponent(
+                                    txtNew,
+                                    javax.swing.GroupLayout.PREFERRED_SIZE,
+                                    javax.swing.GroupLayout.DEFAULT_SIZE,
+                                    javax.swing.GroupLayout.PREFERRED_SIZE
+                                )
+                        )
+                        .addPreferredGap(
+                            javax.swing.LayoutStyle.ComponentPlacement.RELATED
+                        )
+                        .addGroup(
+                            layout
+                                .createParallelGroup(
+                                    javax.swing.GroupLayout.Alignment.BASELINE
+                                )
+                                .addComponent(jLabel3)
+                                .addComponent(
+                                    txtConfirm,
+                                    javax.swing.GroupLayout.PREFERRED_SIZE,
+                                    javax.swing.GroupLayout.DEFAULT_SIZE,
+                                    javax.swing.GroupLayout.PREFERRED_SIZE
+                                )
+                        )
+                        .addPreferredGap(
+                            javax.swing.LayoutStyle.ComponentPlacement.UNRELATED
+                        )
+                        .addGroup(
+                            layout
+                                .createParallelGroup(
+                                    javax.swing.GroupLayout.Alignment.BASELINE
+                                )
+                                .addComponent(btnOk)
+                                .addComponent(btnCancel)
+                        )
+                        .addContainerGap(20, Short.MAX_VALUE)
+                )
         );
 
         pack();
-    }// </editor-fold>//GEN-END:initComponents
+    } // </editor-fold>//GEN-END:initComponents
 
-    private void btnOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOkActionPerformed
+    private void btnOkActionPerformed(java.awt.event.ActionEvent evt) {
+        //GEN-FIRST:event_btnOkActionPerformed
         String oldPassword = new String(txtOld.getPassword());
         String newPassword = new String(txtNew.getPassword());
         String confirm = new String(txtConfirm.getPassword());
@@ -128,7 +233,10 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         }
 
         if (!newPassword.equals(confirm)) {
-            JOptionPane.showMessageDialog(this, "Новый пароль и подтверждение не совпадают");
+            JOptionPane.showMessageDialog(
+                this,
+                "Новый пароль и подтверждение не совпадают"
+            );
             return;
         }
 
@@ -138,7 +246,10 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         }
 
         if (newPassword.contains(";")) {
-            JOptionPane.showMessageDialog(this, "Пароль не должен содержать символ ;");
+            JOptionPane.showMessageDialog(
+                this,
+                "Пароль не должен содержать символ ;"
+            );
             return;
         }
 
@@ -155,11 +266,12 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         changed = true;
         JOptionPane.showMessageDialog(this, "Пароль изменён");
         dispose();
-    }//GEN-LAST:event_btnOkActionPerformed
+    } //GEN-LAST:event_btnOkActionPerformed
 
-    private void btnCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelActionPerformed
+    private void btnCancelActionPerformed(java.awt.event.ActionEvent evt) {
+        //GEN-FIRST:event_btnCancelActionPerformed
         dispose();
-    }//GEN-LAST:event_btnCancelActionPerformed
+    } //GEN-LAST:event_btnCancelActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCancel;

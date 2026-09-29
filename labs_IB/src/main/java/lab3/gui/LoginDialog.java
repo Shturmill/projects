@@ -139,6 +139,11 @@ public class LoginDialog extends javax.swing.JDialog {
                         "Необходимо задать пароль, соответствующий ограничениям. Программа будет закрыта.");
                 Main.exit();
             }
+            // после смены пароля - повторный вход уже с новым паролем
+            JOptionPane.showMessageDialog(this, "Войдите с новым паролем");
+            txtPassword.setText("");
+            txtPassword.requestFocusInWindow();
+            return;
         }
 
         user = found;
